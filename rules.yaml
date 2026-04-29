@@ -1,0 +1,27 @@
+group a:
+  name: "regex"
+  data_size:
+    greater: 1000
+    lesser: 10
+    equal: 1000
+  action: #any one action
+    enable: true
+    move: "str"
+    delete: "str"
+    copy: "str"
+  enable: true #boolean
+  priority: 1 #some int
+
+group b:
+  name: "regex"
+  data_size:
+    greater: 1000
+    lesser: 10
+    equal: 1000
+  action: #any one action
+    enable: true
+    move: "str"
+    delete: "str"
+    copy: "str"
+  enable: true #boolean
+  priority: 1 #some int
