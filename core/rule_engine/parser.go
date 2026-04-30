@@ -1,35 +1,15 @@
 package rule_engine
 
 import (
+	"cmp"
 	"fmt"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 )
-
-type action struct {
-	Move   string `yaml:"move"`
-	Delete bool   `yaml:"delete"`
-	Copy   string `yaml:"copy"`
-}
-
-type data_size struct {
-	Enable bool `yaml:"enable"`
-	Max    int  `yaml:"max,omitempty"`
-	Min    int  `yaml:"min,omitempty"`
-	Equal  int  `yaml:"equal,omitempty"`
-}
-
-type ruleStruct struct {
-	Name      string    `yaml:"name"`
-	Extension string    `yaml:"extension"`
-	Action    action    `yaml:"action"`
-	Data_size data_size `yaml:"data_size"`
-	Enable    bool      `yaml:"enable"`
-	Priority  int       `yaml:"priority"`
-}
 
 func getData(data []byte) (map[string]ruleStruct, error) {
 	var t map[string]ruleStruct
@@ -41,12 +21,12 @@ func getData(data []byte) (map[string]ruleStruct, error) {
 
 }
 
-func regex_validator(data string) error {
+func regexValidator(data string) error {
 	_, err := regexp.Compile(data)
 	return err
 }
 
-func path_validator(path string) error {
+func pathValidator(path string) error {
 	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -58,7 +38,8 @@ func path_validator(path string) error {
 	return nil
 }
 
-func action_validator(data *action) error {
+// allow !delete and copy/move/copy+move or only delete
+func actionValidator(data *action) error {
 	if *data == (action{}) {
 		return fmt.Errorf("empty action field")
 	}
@@ -69,14 +50,15 @@ func action_validator(data *action) error {
 	if data.Copy == "" && data.Move == "" && data.Delete == false {
 		return fmt.Errorf("invalid action field, useless action field")
 	}
-	if data.Delete && data.Move != "" {
-		return fmt.Errorf("delete and move in same action")
+
+	if data.Delete && data.Move != "" || data.Delete && data.Copy != "" {
+		return fmt.Errorf("delete and any other action is not allowed")
 	} else {
-		err := path_validator(data.Move)
+		err := pathValidator(data.Move)
 		if data.Move != "" && err != nil {
 			return fmt.Errorf("path error in move\n %s", err)
 		}
-		err = path_validator(data.Copy)
+		err = pathValidator(data.Copy)
 		if data.Copy != "" && err != nil {
 			return fmt.Errorf("path error in copy\n %s", err)
 		}
@@ -85,10 +67,10 @@ func action_validator(data *action) error {
 
 }
 
-func data_size_validator(data data_size) error {
+func dataSizeValidator(data dataSize) error {
 
-	if data == (data_size{}) {
-		return fmt.Errorf("empty data_size field")
+	if data == (dataSize{}) {
+		return fmt.Errorf("empty dataSize field")
 	}
 
 	if data.Min >= data.Max && data.Max != 0 {
@@ -106,19 +88,19 @@ func data_size_validator(data data_size) error {
 
 func validator(data map[string]ruleStruct) error {
 	for key, value := range data {
-		err := regex_validator(value.Name)
+		err := regexValidator(value.Name)
 		if err != nil {
 			return fmt.Errorf("Error in %s's name \n %s \n", key, err)
 		}
-		err = regex_validator(value.Extension)
+		err = regexValidator(value.Extension)
 		if err != nil {
 			return fmt.Errorf("Error in %s's extension \n %s \n", key, err)
 		}
-		err = action_validator(&value.Action)
+		err = actionValidator(&value.Action)
 		if err != nil {
 			return fmt.Errorf("Error in %s's action \n %s \n", key, err)
 		}
-		err = data_size_validator(value.Data_size)
+		err = dataSizeValidator(value.Data_size)
 		if err != nil {
 			return fmt.Errorf("Error in %s's data size \n %s \n", key, err)
 		}
@@ -126,19 +108,49 @@ func validator(data map[string]ruleStruct) error {
 	return nil
 }
 
-func Parse_validate_pipeline(path string) error {
+func CheckPipeline(path string) (map[string]ruleStruct, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	yaml_data, err := getData(data)
+	yamlData, err := getData(data)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	err = validator(yaml_data)
+	err = validator(yamlData)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return yamlData, nil
+
+}
+
+func CheckSort(path string) ([]rule, error) {
+	yamlData, err := CheckPipeline(path)
+	if err != nil {
+		return nil, err
+	}
+
+	sortedRules := []rule{}
+
+	for key, value := range yamlData {
+		if !value.Enable {
+			continue
+		}
+		if value.Name == "" {
+			value.Name = "."
+		}
+		if value.Extension == "" {
+			value.Extension = "."
+		}
+
+		sortedRules = append(sortedRules, rule{key, value})
+	}
+
+	slices.SortFunc(sortedRules, func(a rule, b rule) int {
+		return cmp.Compare(a.ruleData.Priority, b.ruleData.Priority)
+	})
+
+	return sortedRules, nil
 
 }

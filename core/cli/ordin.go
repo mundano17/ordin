@@ -26,7 +26,7 @@ func main() {
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					val := strings.TrimSpace(cmd.Args().First())
 					if val != "" {
-						err := rule_engine.Parse_validate_pipeline(val)
+						_, err := rule_engine.CheckPipeline(val)
 						if err != nil {
 							return err
 						} else {
