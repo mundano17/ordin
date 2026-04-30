@@ -1,0 +1,26 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+*.coverprofile
+coverage.*
+
+# Go workspace file (should typically NOT be committed)
+go.work
+go.work.sum
+
+# Dependency directories
+# Note: Go modules handle dependencies automatically. 
+# Only uncomment 'vendor/' if you explicitly use 'go mod vendor'.
+# vendor/
+
+# Environment files
+.env

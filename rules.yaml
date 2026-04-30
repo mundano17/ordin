@@ -1,27 +1,26 @@
 group a:
   name: "regex"
   data_size:
-    greater: 1000
-    lesser: 10
+    max: 1000
+    min: 10
     equal: 1000
-  action: #any one action
-    enable: true
-    move: "str"
-    delete: "str"
-    copy: "str"
+    enable: false
+  action: # MOVE + DEL not allowed
+    move: "./core"
+    delete: false
+    copy: "./core"
   enable: true #boolean
   priority: 1 #some int
 
 group b:
   name: "regex"
   data_size:
-    greater: 1000
-    lesser: 10
+    max: 1000
+    min: 10
     equal: 1000
-  action: #any one action
     enable: true
-    move: "str"
-    delete: "str"
-    copy: "str"
+  action: # MOVE + DEL not allowed
+    move: "./core/cli"
+    delete: false
   enable: true #boolean
   priority: 1 #some int
