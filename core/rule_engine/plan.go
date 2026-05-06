@@ -7,17 +7,8 @@ import (
 	"strings"
 )
 
-type fileCommands map[string]commands
-type commands struct {
-	moveCmds     []string
-	copyCmds     []string
-	delCmds      []string
-	conflictFlag bool
-	noAccessFlag bool
-}
-
 type filterStruct struct {
-	fileAction *fileCommands
+	fileAction *FilePaths
 	filePaths  []string
 	copyFlag   bool
 	deleteFlag bool
@@ -51,11 +42,11 @@ func dataSizeChecker(file_path string, min int, max int, equal int, enable bool)
 	}
 }
 
-func cmdMaker(parameter filterStruct) error {
+func planMaker(parameter filterStruct) error {
 	/*
 		conflict -- 2 types:
-			redundant: mv + del
-			ambigious: mv, mv, mv, ....
+			redundant: mv + del (len(val.movePaths) >= 1 && val.deleteFlag)
+			ambigious: mv, mv, mv, .... len(val.movePaths) > 1
 	*/
 	if parameter.moveFlag && parameter.deleteFlag || parameter.deleteFlag && parameter.copyFlag {
 		return fmt.Errorf("delete and move/copy isn't allowed.")
@@ -68,31 +59,22 @@ func cmdMaker(parameter filterStruct) error {
 		}
 		val, ok := (*parameter.fileAction)[path]
 		if !ok {
-			val = commands{}
+			val = Paths{}
 		}
 		if res == -1 {
-			val.noAccessFlag = true
+			val.NoAccessFlag = true
 			continue
 		}
 		if parameter.deleteFlag {
-			k := fmt.Sprintf("rm '%s'", path)
-			val.delCmds = append(val.delCmds, k)
+			val.DeleteFlag = true
 		}
 
 		if parameter.copyFlag {
-			if !val.conflictFlag && (len(val.moveCmds) > 1 || (len(val.moveCmds) >= 1 && len(val.delCmds) >= 1)) {
-				val.conflictFlag = true
-			}
-			k := fmt.Sprintf("cp '%s' '%s'", path, parameter.copyDest)
-			val.copyCmds = append(val.copyCmds, k)
+			val.CopyPaths = append(val.CopyPaths, parameter.copyDest)
 		}
 
 		if parameter.moveFlag {
-			if !val.conflictFlag && (len(val.moveCmds) > 1 || (len(val.moveCmds) >= 1 && len(val.delCmds) >= 1)) {
-				val.conflictFlag = true
-			}
-			k := fmt.Sprintf("mv '%s' '%s'", path, parameter.moveDest)
-			val.moveCmds = append(val.moveCmds, k)
+			val.MovePaths = append(val.MovePaths, parameter.moveDest)
 		}
 
 		(*parameter.fileAction)[path] = val
@@ -100,20 +82,26 @@ func cmdMaker(parameter filterStruct) error {
 	return nil
 }
 
-func plan(sortedRules []rule, path string) (fileCommands, error) {
+func Plan(sortedRules []rule, path string) (FilePaths, error) {
 
 	_, err := os.ReadDir(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("dir path read failed")
 	}
-	var fileAction fileCommands
+	fileAction := make(FilePaths)
 	for _, val := range sortedRules {
 		// SEARCH
 
 		searchTerm := fmt.Sprintf("%s.*%s$", val.ruleData.Name, val.ruleData.Extension)
-		cmd := exec.Command("rg", "--files", "-0", "-g", searchTerm, path)
+		cmd := exec.Command("fd", "-0", searchTerm, path)
+
 		out, err := cmd.Output()
 		if err != nil {
+			if exitError, ok := err.(*exec.ExitError); ok {
+				if exitError.ExitCode() == 1 {
+					return nil, nil
+				}
+			}
 			return nil, err
 		}
 
@@ -133,12 +121,12 @@ func plan(sortedRules []rule, path string) (fileCommands, error) {
 			moveFlag:   (val.ruleData.Action.Move != ""),
 			copyDest:   val.ruleData.Action.Copy,
 			moveDest:   val.ruleData.Action.Move,
-			min:        val.ruleData.Data_size.Min,
-			max:        val.ruleData.Data_size.Max,
-			equal:      val.ruleData.Data_size.Equal,
-			enable:     val.ruleData.Data_size.Enable}
+			min:        val.ruleData.DataSize.Min,
+			max:        val.ruleData.DataSize.Max,
+			equal:      val.ruleData.DataSize.Equal,
+			enable:     val.ruleData.DataSize.Enable}
 
-		err = cmdMaker(param)
+		err = planMaker(param)
 
 	}
 	return fileAction, nil

@@ -1,26 +1,26 @@
 group a:
-  name: "regex"
-  data_size:
+  name: '(?i)ordin'
+  extension: '\.go'
+  dataSize:
     max: 1000
     min: 10
     equal: 1000
     enable: false
   action: # MOVE + DEL not allowed
-    move: "./core"
+    move: "/Users/purushotham"
     delete: false
-    copy: "./core"
   enable: true #boolean
   priority: 1 #some int
 
 group b:
-  name: "regex"
-  data_size:
+  name: "(?i)parser"
+  dataSize:
     max: 1000
     min: 10
     equal: 1000
-    enable: true
+    enable: false
   action: # MOVE + DEL not allowed
-    move: "./core/cli"
+    move: "/Users/purushotham"
     delete: false
   enable: true #boolean
   priority: 1 #some int

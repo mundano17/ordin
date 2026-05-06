@@ -17,7 +17,7 @@ type ruleStruct struct {
 	Name      string   `yaml:"name"`
 	Extension string   `yaml:"extension"`
 	Action    action   `yaml:"action"`
-	Data_size dataSize `yaml:"dataSize"`
+	DataSize  dataSize `yaml:"dataSize"`
 	Enable    bool     `yaml:"enable"`
 	Priority  int      `yaml:"priority"`
 }
@@ -25,4 +25,14 @@ type ruleStruct struct {
 type rule struct {
 	ruleName string
 	ruleData ruleStruct
+}
+
+type FilePaths map[string]Paths
+
+type Paths struct {
+	Srcpath      string
+	MovePaths    []string
+	CopyPaths    []string
+	DeleteFlag   bool
+	NoAccessFlag bool
 }

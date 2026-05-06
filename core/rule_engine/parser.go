@@ -26,7 +26,7 @@ func regexValidator(data string) error {
 	return err
 }
 
-func pathValidator(path string) error {
+func PathValidator(path string) error {
 	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -54,11 +54,11 @@ func actionValidator(data *action) error {
 	if data.Delete && data.Move != "" || data.Delete && data.Copy != "" {
 		return fmt.Errorf("delete and any other action is not allowed")
 	} else {
-		err := pathValidator(data.Move)
+		err := PathValidator(data.Move)
 		if data.Move != "" && err != nil {
 			return fmt.Errorf("path error in move\n %s", err)
 		}
-		err = pathValidator(data.Copy)
+		err = PathValidator(data.Copy)
 		if data.Copy != "" && err != nil {
 			return fmt.Errorf("path error in copy\n %s", err)
 		}
@@ -100,7 +100,7 @@ func validator(data map[string]ruleStruct) error {
 		if err != nil {
 			return fmt.Errorf("Error in %s's action \n %s \n", key, err)
 		}
-		err = dataSizeValidator(value.Data_size)
+		err = dataSizeValidator(value.DataSize)
 		if err != nil {
 			return fmt.Errorf("Error in %s's data size \n %s \n", key, err)
 		}
