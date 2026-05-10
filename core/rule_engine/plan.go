@@ -60,6 +60,7 @@ func planMaker(parameter filterStruct) error {
 		val, ok := (*parameter.fileAction)[path]
 		if !ok {
 			val = Paths{}
+			val.Srcpath = path
 		}
 		if res == -1 {
 			val.NoAccessFlag = true

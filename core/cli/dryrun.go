@@ -2,9 +2,11 @@ package cli
 
 import (
 	"fmt"
+	"log"
 	"ordin/m/core/cli/section"
 	"ordin/m/core/rule_engine"
 	"os"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -20,10 +22,6 @@ type sessionPaths struct {
 	sourcePaths          map[string]string
 }
 
-// TODO figure out how to display multiple sections, starting with 2
-// TODO figure out how to get cli to run from main.go
-// TODO figure out v1
-
 func initialize(fileActions rule_engine.FilePaths) sessionPaths {
 	m := sessionPaths{
 		copyPaths:            make(map[string][]string),
@@ -38,6 +36,7 @@ func initialize(fileActions rule_engine.FilePaths) sessionPaths {
 	for key, value := range fileActions {
 		moveLen := len(value.MovePaths)
 		m.sourcePaths[key] = value.Srcpath
+		log.Println(value.Srcpath)
 		m.copyPaths[key] = value.CopyPaths
 		if value.NoAccessFlag {
 			m.noAccessFiles = append(m.noAccessFiles, key)
@@ -63,17 +62,17 @@ func initialize(fileActions rule_engine.FilePaths) sessionPaths {
 type model struct {
 	sections []section.SectionModel
 	cursor   int
-	scroll   bool
 }
 
 func dryRunInit(fileActions rule_engine.FilePaths) model {
 	sessionPath := initialize(fileActions)
 	return model{
 		sections: []section.SectionModel{
-			section.SectionInitializer(sessionPath.sourcePaths, sessionPath.copyPaths),
-			section.SectionInitializer(sessionPath.sourcePaths, sessionPath.nonConflictMovePaths),
+			section.SectionInitializer(sessionPath.sourcePaths, sessionPath.copyPaths, true),
+			section.SectionInitializer(sessionPath.sourcePaths, sessionPath.nonConflictMovePaths, false),
+			section.SectionInitializer(sessionPath.sourcePaths, sessionPath.redundanctDelPaths, false),
+			section.SectionInitializer(sessionPath.sourcePaths, sessionPath.ambigiousCmds, false),
 		},
-		scroll: true,
 		cursor: 0,
 	}
 }
@@ -83,32 +82,97 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
+	if m.sections[m.cursor].Selected {
+
+		updated, cmd :=
+			m.sections[m.cursor].Update(msg)
+
+		m.sections[m.cursor] =
+			updated.(section.SectionModel)
+
+		switch msg := msg.(type) {
+		case tea.KeyPressMsg:
+			if msg.String() == "esc" {
+				m.sections[m.cursor].Selected = false
+			}
+		}
+
+		return m, cmd
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "tab":
-			if !m.scroll && m.cursor > 0 {
-				m.cursor--
-				if m.cursor == 0 {
-					m.scroll = true
-				}
-			}
-			if m.scroll && m.cursor < len(m.sections)-1 {
+			if m.cursor < len(m.sections)-1 {
 				m.cursor++
-				m.scroll = true
-				if m.cursor == len(m.sections) {
-					m.scroll = false
-				}
+			} else {
+				m.cursor = 0
 			}
 		case "c":
 			m.sections[m.cursor].Collapse = !m.sections[m.cursor].Collapse
+
+		case "ctrl+c", "q":
+			return m, tea.Quit
+
+		case "ctrl+s", "s":
+			// need to make an check function to make sure user have checked out the correct stuff or
+			// make a new section logic for mabigious moves to make sure the UX forces the user to well not choose more than one move statement per file
+			// for now calling BuildPaths over the UX forced, correct shit
+			m.BuildPaths()
+			return m,tea.Quit
+
+		case "enter":
+			m.sections[m.cursor].Selected = true
+
+		case "esc":
+			m.sections[m.cursor].Selected = false
+
 		}
+
 	}
 	return m, nil
 }
 
+type finalPaths struct {
+	copy map[string][]string
+	move map[string][]string
+	del  []string
+}
+
+func (m model) BuildPaths() finalPaths {
+	copyPaths := make(map[string][]string)
+	movePaths := make(map[string][]string)
+	delPaths := []string{}
+	// copy paths
+	for _, row := range m.sections[0].Rows {
+		if row.Selected {
+			copyPaths[row.SrcPath] = append(copyPaths[row.SrcPath], row.DestPath)
+		}
+	}
+	// move paths
+	for _, row := range m.sections[1].Rows {
+		if row.Selected {
+			movePaths[row.SrcPath] = append(movePaths[row.SrcPath], row.DestPath)
+		}
+	}
+	// delete paths
+	for _, row := range m.sections[2].Rows {
+		if row.Selected {
+			delPaths = append(delPaths, row.SrcPath)
+		}
+	}
+	// redundant paths
+	// ambigious paths
+	return finalPaths{
+		copy: copyPaths,
+		move: movePaths,
+		del: delPaths,
+	}
+}
 func (m model) View() tea.View {
-	s := ""
+	var s strings.Builder
 	for i, section := range m.sections {
 		cursor := " "
 		if m.cursor == i {
@@ -120,12 +184,18 @@ func (m model) View() tea.View {
 			section_name = "copy"
 		case 1:
 			section_name = "move"
+		case 2:
+			section_name = "redundant deletes"
+		case 3:
+			section_name = "ambigious moves"
+		case 4:
+			section_name = "delete"
 		}
 
-		s += fmt.Sprintf("\n%s %s\n %s\n", cursor, section_name, section.View().Content)
+		fmt.Fprintf(&s, "%s%s\n%s\n", cursor, section_name, section.View().Content)
 	}
-	s += "\nPress q to quit.\n"
-	return tea.NewView(s)
+	s.WriteString("\nPress q to quit.\n")
+	return tea.NewView(s.String())
 }
 
 func DryRun(fileActions rule_engine.FilePaths) {

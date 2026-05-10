@@ -36,3 +36,4 @@ type Paths struct {
 	DeleteFlag   bool
 	NoAccessFlag bool
 }
+

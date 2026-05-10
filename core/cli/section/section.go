@@ -2,41 +2,44 @@ package section
 
 import (
 	"fmt"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 )
 
 type row struct {
-	selected bool
-	fileName string
-	srcPath  string
-	destPath string
+	Selected bool
+	FileName string
+	SrcPath  string
+	DestPath string
 }
 
 type SectionModel struct {
-	rows     []row
+	Rows     []row
 	cursor   int
 	Collapse bool
+	Selected bool
 }
 
-func SectionInitializer(srcPaths map[string]string, destPaths map[string][]string) SectionModel {
+func SectionInitializer(SrcPaths map[string]string, DestPaths map[string][]string, defaultsel bool) SectionModel {
 
-	rows := []row{}
-	for key, val := range destPaths {
-		for _, destPath := range val {
+	Rows := []row{}
+	for key, val := range DestPaths {
+		for _, DestPath := range val {
 			y := row{
-				selected: false,
-				fileName: key,
-				srcPath:  srcPaths[key],
-				destPath: destPath,
+				Selected: defaultsel,
+				FileName: key,
+				SrcPath:  SrcPaths[key],
+				DestPath: DestPath,
 			}
-			rows = append(rows, y)
+			Rows = append(Rows, y)
 		}
 	}
 
 	m := SectionModel{
-		rows:   rows,
-		cursor: 0,
+		Rows:     Rows,
+		cursor:   0,
+		Selected: false,
 	}
 	return m
 
@@ -48,6 +51,9 @@ func (m SectionModel) Init() tea.Cmd {
 }
 
 func (m SectionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if len(m.Rows) == 0 {
+		return m, nil
+	}
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
@@ -56,39 +62,42 @@ func (m SectionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor--
 			}
 		case "down", "j":
-			if m.cursor < len(m.rows)-1 {
+			if m.cursor < len(m.Rows)-1 {
 				m.cursor++
 			}
 		case "enter", "space":
-			m.rows[m.cursor].selected = !m.rows[m.cursor].selected
+			m.Rows[m.cursor].Selected = !m.Rows[m.cursor].Selected
+
+		case "ctrl+c", "q":
+			return m, tea.Quit
 		}
 	}
 	return m, nil
 }
 
 func (m SectionModel) View() tea.View {
-	s := " "
+	var s strings.Builder
 	if !m.Collapse {
-		for i, row := range m.rows {
+		for i, row := range m.Rows {
 			checkbox := "[ ]"
 			cursor := " "
-			if m.cursor == i {
+			if m.cursor == i && m.Selected {
 				cursor = ">"
 			}
-			if row.selected {
+			if row.Selected {
 				checkbox = "[x]"
 			}
-			s += fmt.Sprintf(
-				"%s %s %-10s %-10s %-10s\n",
+			fmt.Fprintf(&s,
+				"%s%s %-30s %-100s %-100s\n",
 				cursor,
 				checkbox,
-				row.fileName,
-				row.srcPath,
-				row.destPath,
+				row.FileName,
+				row.SrcPath,
+				row.DestPath,
 			)
 
 		}
 	}
 
-	return tea.NewView(s)
+	return tea.NewView(s.String())
 }
