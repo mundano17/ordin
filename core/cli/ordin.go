@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"ordin/m/core/cli/dryrun"
 	"ordin/m/core/rule_engine"
 	"strings"
 
@@ -55,7 +56,7 @@ func CliRunner() *cli.Command {
 						return err
 					}
 					paths, err := rule_engine.Plan(sortedRules, working_dest)
-					DryRun(paths)
+					dryrun.DryRunTUIInit(paths)
 					return nil
 				},
 			},

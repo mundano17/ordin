@@ -23,7 +23,11 @@ go.work.sum
 # vendor/
 
 # Environment files
-.env
-.org
-.txt
-.bin
+*.env
+
+# Random outputs
+*.org
+*.txt
+*.bin
+*.json
+.DS_Store

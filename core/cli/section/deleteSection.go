@@ -7,28 +7,28 @@ import (
 	tea "charm.land/bubbletea/v2"
 )
 
-type deleteRows struct {
-	Selected bool
-	FileName string
-	SrcPath  string
+type deleteRow struct {
+	RowSelected bool
+	FileName    string
+	SrcPath     string
 }
 
 type DeleteSectionModel struct {
-	DeleteRows []deleteRows
+	DeleteRows []deleteRow
 	cursor     int
 	Collapse   bool
-	Selected   bool
+	Focus      bool
 }
 
 func DeleteSectionInitializer(SrcPaths map[string]string, nonConflictDelFlag map[string]bool, defaultsel bool) DeleteSectionModel {
 
-	DeleteRows := []deleteRows{}
+	DeleteRows := []deleteRow{}
 	for key, val := range SrcPaths {
 		if nonConflictDelFlag[key] {
-			y := deleteRows{
-				Selected: defaultsel,
-				FileName: key,
-				SrcPath:  val,
+			y := deleteRow{
+				RowSelected: defaultsel,
+				FileName:    key,
+				SrcPath:     val,
 			}
 			DeleteRows = append(DeleteRows, y)
 		}
@@ -37,15 +37,32 @@ func DeleteSectionInitializer(SrcPaths map[string]string, nonConflictDelFlag map
 	m := DeleteSectionModel{
 		DeleteRows: DeleteRows,
 		cursor:     0,
-		Selected:   false,
+		Focus:      false,
 	}
 	return m
 
 }
 
 func (m DeleteSectionModel) Init() tea.Cmd {
-	// Just return `nil`, which means "no I/O right now, please."
+	// Just return `nil`, which means "no currentRowNumber/O right now, please."
 	return nil
+}
+
+func (m DeleteSectionModel) moveUp() {
+	if m.cursor > 0 {
+		m.cursor--
+	}
+}
+
+func (m DeleteSectionModel) moveDown() {
+	if m.cursor < len(m.DeleteRows)-1 {
+		m.cursor++
+	}
+}
+
+func (m DeleteSectionModel) toggleRowSelection() {
+	m.DeleteRows[m.cursor].RowSelected = !m.DeleteRows[m.cursor].RowSelected
+
 }
 
 func (m DeleteSectionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -56,16 +73,11 @@ func (m DeleteSectionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
+			m.moveUp()
 		case "down", "j":
-			if m.cursor < len(m.DeleteRows)-1 {
-				m.cursor++
-			}
+			m.moveDown()
 		case "enter", "space":
-			m.DeleteRows[m.cursor].Selected = !m.DeleteRows[m.cursor].Selected
-
+			m.toggleRowSelection()
 		case "ctrl+c", "q":
 			return m, tea.Quit
 		}
@@ -76,21 +88,21 @@ func (m DeleteSectionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m DeleteSectionModel) View() tea.View {
 	var s strings.Builder
 	if !m.Collapse {
-		for i, deleteRows := range m.DeleteRows {
+		for currentRowNumber, row := range m.DeleteRows {
 			checkbox := "[ ]"
 			cursor := " "
-			if m.cursor == i && m.Selected {
+			if m.cursor == currentRowNumber && m.Focus {
 				cursor = ">"
 			}
-			if deleteRows.Selected {
+			if row.RowSelected {
 				checkbox = "[x]"
 			}
 			fmt.Fprintf(&s,
 				"%s%s %-30s %-100s\n",
 				cursor,
 				checkbox,
-				deleteRows.FileName,
-				deleteRows.SrcPath,
+				row.FileName,
+				row.SrcPath,
 			)
 
 		}

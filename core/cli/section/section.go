@@ -8,17 +8,17 @@ import (
 )
 
 type row struct {
-	Selected bool
-	FileName string
-	SrcPath  string
-	DestPath string
+	RowSelected bool
+	FileName    string
+	SrcPath     string
+	DestPath    string
 }
 
 type SectionModel struct {
 	Rows     []row
 	cursor   int
 	Collapse bool
-	Selected bool
+	Focus    bool
 }
 
 func SectionInitializer(SrcPaths map[string]string, DestPaths map[string][]string, defaultsel bool) SectionModel {
@@ -27,19 +27,19 @@ func SectionInitializer(SrcPaths map[string]string, DestPaths map[string][]strin
 	for key, val := range DestPaths {
 		for _, DestPath := range val {
 			y := row{
-				Selected: defaultsel,
-				FileName: key,
-				SrcPath:  SrcPaths[key],
-				DestPath: DestPath,
+				RowSelected: defaultsel,
+				FileName:    key,
+				SrcPath:     SrcPaths[key],
+				DestPath:    DestPath,
 			}
 			Rows = append(Rows, y)
 		}
 	}
 
 	m := SectionModel{
-		Rows:     Rows,
-		cursor:   0,
-		Selected: false,
+		Rows:   Rows,
+		cursor: 0,
+		Focus:  false,
 	}
 	return m
 
@@ -50,6 +50,23 @@ func (m SectionModel) Init() tea.Cmd {
 	return nil
 }
 
+func (m SectionModel) moveUp() {
+	if m.cursor > 0 {
+		m.cursor--
+	}
+}
+
+func (m SectionModel) moveDown() {
+	if m.cursor < len(m.Rows)-1 {
+		m.cursor++
+	}
+}
+
+func (m SectionModel) toggleRowSelection() {
+	m.Rows[m.cursor].RowSelected = !m.Rows[m.cursor].RowSelected
+
+}
+
 func (m SectionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if len(m.Rows) == 0 {
 		return m, nil
@@ -58,16 +75,11 @@ func (m SectionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
+			m.moveUp()
 		case "down", "j":
-			if m.cursor < len(m.Rows)-1 {
-				m.cursor++
-			}
+			m.moveDown()
 		case "enter", "space":
-			m.Rows[m.cursor].Selected = !m.Rows[m.cursor].Selected
-
+			m.toggleRowSelection()
 		case "ctrl+c", "q":
 			return m, tea.Quit
 		}
@@ -81,10 +93,10 @@ func (m SectionModel) View() tea.View {
 		for i, row := range m.Rows {
 			checkbox := "[ ]"
 			cursor := " "
-			if m.cursor == i && m.Selected {
+			if m.cursor == i && m.Focus {
 				cursor = ">"
 			}
-			if row.Selected {
+			if row.RowSelected {
 				checkbox = "[x]"
 			}
 			fmt.Fprintf(&s,
