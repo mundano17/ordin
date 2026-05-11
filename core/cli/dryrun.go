@@ -9,7 +9,20 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+
+	"encoding/json"
 )
+
+func SavePlan(path string, data finalPaths) error {
+    file, err := os.Create(path)
+    if err != nil {
+        return err
+    }
+    defer file.Close()
+    encoder := json.NewEncoder(file)
+    encoder.SetIndent("", "  ")
+    return encoder.Encode(data)
+}
 
 type sessionPaths struct {
 	cursor               int
@@ -60,8 +73,10 @@ func initialize(fileActions rule_engine.FilePaths) sessionPaths {
 }
 
 type model struct {
-	sections []section.SectionModel
-	cursor   int
+	sections        []section.SectionModel
+	ambgiousSection section.AmbigiousSection
+	deleteSection   section.DeleteSectionModel
+	cursor          int
 }
 
 func dryRunInit(fileActions rule_engine.FilePaths) model {
@@ -71,9 +86,10 @@ func dryRunInit(fileActions rule_engine.FilePaths) model {
 			section.SectionInitializer(sessionPath.sourcePaths, sessionPath.copyPaths, true),
 			section.SectionInitializer(sessionPath.sourcePaths, sessionPath.nonConflictMovePaths, false),
 			section.SectionInitializer(sessionPath.sourcePaths, sessionPath.redundanctDelPaths, false),
-			section.SectionInitializer(sessionPath.sourcePaths, sessionPath.ambigiousCmds, false),
 		},
-		cursor: 0,
+		ambgiousSection: section.AmbigiousSectionInitializer(sessionPath.sourcePaths, sessionPath.ambigiousCmds, false),
+		deleteSection:   section.DeleteSectionInitializer(sessionPath.sourcePaths, sessionPath.nonConflictDelFlag, false),
+		cursor:          0,
 	}
 }
 
@@ -83,7 +99,7 @@ func (m model) Init() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
-	if m.sections[m.cursor].Selected {
+	if m.cursor < len(m.sections) && m.sections[m.cursor].Selected {
 
 		updated, cmd :=
 			m.sections[m.cursor].Update(msg)
@@ -99,35 +115,84 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		return m, cmd
+	} else if m.cursor == len(m.sections) && m.ambgiousSection.Selected {
+
+		updated, cmd :=
+			m.ambgiousSection.Update(msg)
+
+		m.ambgiousSection =
+			updated.(section.AmbigiousSection)
+
+		switch msg := msg.(type) {
+		case tea.KeyPressMsg:
+			if msg.String() == "esc" {
+				m.ambgiousSection.Selected = false
+			}
+		}
+
+		return m, cmd
+	} else if m.cursor == len(m.sections)+1 && m.deleteSection.Selected {
+
+		updated, cmd :=
+			m.deleteSection.Update(msg)
+
+		m.deleteSection =
+			updated.(section.DeleteSectionModel)
+
+		switch msg := msg.(type) {
+		case tea.KeyPressMsg:
+			if msg.String() == "esc" {
+				m.deleteSection.Selected = false
+			}
+		}
+
+		return m, cmd
 	}
 
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "tab":
-			if m.cursor < len(m.sections)-1 {
+			if m.cursor < (len(m.sections)-1)+2 {
 				m.cursor++
 			} else {
 				m.cursor = 0
 			}
 		case "c":
-			m.sections[m.cursor].Collapse = !m.sections[m.cursor].Collapse
-
+			if m.cursor < len(m.sections) {
+				m.sections[m.cursor].Collapse = !m.sections[m.cursor].Collapse
+			} else if m.cursor == len(m.sections) {
+				m.ambgiousSection.Collapse = !m.ambgiousSection.Collapse
+			} else if m.cursor == len(m.sections)+1 {
+				m.deleteSection.Collapse = !m.deleteSection.Collapse
+			}
 		case "ctrl+c", "q":
 			return m, tea.Quit
 
 		case "ctrl+s", "s":
-			// need to make an check function to make sure user have checked out the correct stuff or
-			// make a new section logic for mabigious moves to make sure the UX forces the user to well not choose more than one move statement per file
-			// for now calling BuildPaths over the UX forced, correct shit
-			m.BuildPaths()
-			return m,tea.Quit
+			finalPaths := m.BuildPaths()
+			SavePlan("plan.json",finalPaths)
+			return m, tea.Quit
 
 		case "enter":
-			m.sections[m.cursor].Selected = true
+			if m.cursor < len(m.sections) {
+				m.sections[m.cursor].Selected = true
+			} else if m.cursor == len(m.sections) {
+				m.ambgiousSection.Selected = true
+			}
+			if m.cursor == len(m.sections)+1 {
+				m.deleteSection.Selected = true
+			}
 
 		case "esc":
-			m.sections[m.cursor].Selected = false
+			if m.cursor < len(m.sections) {
+				m.sections[m.cursor].Selected = false
+			} else if m.cursor == len(m.sections) {
+				m.ambgiousSection.Selected = false
+			}
+			if m.cursor == len(m.sections)+1 {
+				m.deleteSection.Selected = false
+			}
 
 		}
 
@@ -136,9 +201,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 type finalPaths struct {
-	copy map[string][]string
-	move map[string][]string
-	del  []string
+	Copy map[string][]string
+	Move map[string][]string
+	Del  []string
 }
 
 func (m model) BuildPaths() finalPaths {
@@ -157,20 +222,31 @@ func (m model) BuildPaths() finalPaths {
 			movePaths[row.SrcPath] = append(movePaths[row.SrcPath], row.DestPath)
 		}
 	}
-	// delete paths
+	// redundant paths
 	for _, row := range m.sections[2].Rows {
 		if row.Selected {
-			delPaths = append(delPaths, row.SrcPath)
+			movePaths[row.SrcPath] = append(movePaths[row.SrcPath], row.DestPath)
 		}
 	}
-	// redundant paths
+	// delete paths
+	for _, rows := range m.deleteSection.DeleteRows {
+		if rows.Selected {
+			delPaths = append(delPaths, rows.SrcPath)
+		}
+
+	}
 	// ambigious paths
+	for _, fileSection := range m.ambgiousSection.Section {
+		index := fileSection.SelectedRow
+		movePaths[fileSection.Rows[index].SrcPath] = append(movePaths[fileSection.Rows[index].SrcPath], fileSection.Rows[index].DestPath)
+	}
 	return finalPaths{
-		copy: copyPaths,
-		move: movePaths,
-		del: delPaths,
+		Copy: copyPaths,
+		Move: movePaths,
+		Del:  delPaths,
 	}
 }
+
 func (m model) View() tea.View {
 	var s strings.Builder
 	for i, section := range m.sections {
@@ -186,14 +262,21 @@ func (m model) View() tea.View {
 			section_name = "move"
 		case 2:
 			section_name = "redundant deletes"
-		case 3:
-			section_name = "ambigious moves"
-		case 4:
-			section_name = "delete"
 		}
-
 		fmt.Fprintf(&s, "%s%s\n%s\n", cursor, section_name, section.View().Content)
 	}
+	// ambigious section View
+	cursor := " "
+	if m.cursor == len(m.sections) {
+		cursor = ">"
+	}
+	fmt.Fprintf(&s, "%s%s\n%s\n", cursor, "Ambigious Moves", m.ambgiousSection.View().Content)
+	cursor = " "
+	if m.cursor == len(m.sections)+1 {
+		cursor = ">"
+	}
+	fmt.Fprintf(&s, "%s%s\n%s\n", cursor, "Delete Section", m.deleteSection.View().Content)
+
 	s.WriteString("\nPress q to quit.\n")
 	return tea.NewView(s.String())
 }
