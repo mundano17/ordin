@@ -1,3 +1,5 @@
+
+
 package dryrun
 
 import (
@@ -5,60 +7,87 @@ import (
 	"os"
 )
 
-type finalPaths struct {
-	Copy map[string][]string
-	Move map[string][]string
-	Del  []string
+type FileOptions map[string]Options
+
+type Options struct {
+	MovePaths    []string
+	CopyPaths    []string
+	DeleteFlag   bool
 }
 
-func SavePlan(path string, data finalPaths) error {
+func SavePlan(path string, data FileOptions) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		closeErr := file.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(data)
 }
 
-func (m model) BuildPaths() finalPaths {
-	copyPaths := make(map[string][]string)
-	movePaths := make(map[string][]string)
-	delPaths := []string{}
+func (m model) BuildPaths() FileOptions {
+	fileActions := make(FileOptions)
+
+	getOrCreate := func(path string) Options {
+		val, ok := fileActions[path]
+		if !ok {
+			val = Options{}
+		}
+		return val
+	}
+
 	// copy paths
 	for _, row := range m.sections[0].Rows {
 		if row.RowSelected {
-			copyPaths[row.SrcPath] = append(copyPaths[row.SrcPath], row.DestPath)
+			val := getOrCreate(row.SrcPath)
+			val.CopyPaths = append(val.CopyPaths, row.DestPath)
+			fileActions[row.SrcPath] = val
 		}
 	}
+
 	// move paths
 	for _, row := range m.sections[1].Rows {
 		if row.RowSelected {
-			movePaths[row.SrcPath] = append(movePaths[row.SrcPath], row.DestPath)
+			val := getOrCreate(row.SrcPath)
+			val.MovePaths = append(val.MovePaths, row.DestPath)
+			fileActions[row.SrcPath] = val
 		}
 	}
+
 	// redundant paths
 	for _, row := range m.sections[2].Rows {
 		if row.RowSelected {
-			movePaths[row.SrcPath] = append(movePaths[row.SrcPath], row.DestPath)
+			val := getOrCreate(row.SrcPath)
+			val.MovePaths = append(val.MovePaths, row.DestPath)
+			fileActions[row.SrcPath] = val
 		}
 	}
-	// delete paths
-	for _, rows := range m.deleteSection.DeleteRows {
-		if rows.RowSelected {
-			delPaths = append(delPaths, rows.SrcPath)
-		}
 
+	// delete paths
+	for _, row := range m.deleteSection.DeleteRows {
+		if row.RowSelected {
+			val := getOrCreate(row.SrcPath)
+			val.DeleteFlag = true
+			fileActions[row.SrcPath] = val
+		}
 	}
-	// ambigious paths
+
+	// ambiguous paths
 	for _, fileSection := range m.ambgiousSection.FileSections {
 		index := fileSection.SelectedRow
-		movePaths[fileSection.Rows[index].SrcPath] = append(movePaths[fileSection.Rows[index].SrcPath], fileSection.Rows[index].DestPath)
+
+		row := fileSection.Rows[index]
+
+		val := getOrCreate(row.SrcPath)
+		val.MovePaths = append(val.MovePaths, row.DestPath)
+		fileActions[row.SrcPath] = val
 	}
-	return finalPaths{
-		Copy: copyPaths,
-		Move: movePaths,
-		Del:  delPaths,
-	}
+
+	return fileActions
 }

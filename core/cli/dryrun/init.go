@@ -1,17 +1,18 @@
+// Package dryrun TUI stuff
 package dryrun
 
 import (
 	"fmt"
 	"log"
-	"ordin/m/core/cli/section"
-	"ordin/m/core/rule_engine"
 	"os"
+
+	"ordin/m/core/cli/section"
+	"ordin/m/core/ruleengine"
 
 	tea "charm.land/bubbletea/v2"
 )
 
 type sessionPaths struct {
-	cursor               int
 	copyPaths            map[string][]string
 	nonConflictMovePaths map[string][]string
 	nonConflictDelFlag   map[string]bool
@@ -28,7 +29,7 @@ type model struct {
 	cursor          int
 }
 
-func getSessionPaths(fileActions rule_engine.FilePaths) sessionPaths {
+func getSessionPaths(fileActions ruleengine.FilePaths) sessionPaths {
 	m := sessionPaths{
 		copyPaths:            make(map[string][]string),
 		nonConflictMovePaths: make(map[string][]string),
@@ -65,7 +66,7 @@ func getSessionPaths(fileActions rule_engine.FilePaths) sessionPaths {
 	return m
 }
 
-func DryRunTUIInit(fileActions rule_engine.FilePaths) {
+func DryRunTUIInit(fileActions ruleengine.FilePaths) {
 	p := tea.NewProgram(dryRunInit(fileActions))
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
@@ -73,7 +74,7 @@ func DryRunTUIInit(fileActions rule_engine.FilePaths) {
 	}
 }
 
-func dryRunInit(fileActions rule_engine.FilePaths) model {
+func dryRunInit(fileActions ruleengine.FilePaths) model {
 	sessionPath := getSessionPaths(fileActions)
 	return model{
 		sections: []section.SectionModel{

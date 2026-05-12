@@ -1,17 +1,18 @@
+// Package cli is meant to build the flags, cli, commands, etc
 package cli
 
 import (
 	"context"
 	"fmt"
-	"ordin/m/core/cli/dryrun"
-	"ordin/m/core/rule_engine"
 	"strings"
+
+	"ordin/m/core/cli/dryrun"
+	"ordin/m/core/ruleengine"
 
 	"github.com/urfave/cli/v3"
 )
 
 func CliRunner() *cli.Command {
-
 	cmd := &cli.Command{
 		Name:    "ordin",
 		Usage:   "sort your filez",
@@ -25,7 +26,7 @@ func CliRunner() *cli.Command {
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					val := strings.TrimSpace(cmd.Args().First())
 					if val != "" {
-						_, err := rule_engine.CheckPipeline(val)
+						_, err := ruleengine.CheckPipeline(val)
 						if err != nil {
 							return err
 						} else {
@@ -33,7 +34,7 @@ func CliRunner() *cli.Command {
 							return nil
 						}
 					}
-					return fmt.Errorf("Invalid argument")
+					return fmt.Errorf("invalid argument")
 				},
 			},
 
@@ -42,20 +43,23 @@ func CliRunner() *cli.Command {
 				Usage:   "to run and get a log",
 				Aliases: []string{"drun"},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					rules_dest := strings.TrimSpace(cmd.Args().Get(0))
-					working_dest := strings.TrimSpace(cmd.Args().Get(1))
-					if rules_dest == "" {
-						return fmt.Errorf("Invalid first argument")
+					rulesDest := strings.TrimSpace(cmd.Args().Get(0))
+					worlingDest := strings.TrimSpace(cmd.Args().Get(1))
+					if rulesDest == "" {
+						return fmt.Errorf("invalid first argument")
 					}
-					if working_dest == "" {
-						return fmt.Errorf("Invalid second argument")
+					if worlingDest == "" {
+						return fmt.Errorf("invalid second argument")
 					}
 
-					sortedRules, err := rule_engine.CheckSort(rules_dest)
+					sortedRules, err := ruleengine.CheckSort(rulesDest)
 					if err != nil {
 						return err
 					}
-					paths, err := rule_engine.Plan(sortedRules, working_dest)
+					paths, err := ruleengine.Plan(sortedRules, worlingDest)
+					if err != nil {
+						return err
+					}
 					dryrun.DryRunTUIInit(paths)
 					return nil
 				},

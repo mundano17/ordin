@@ -50,19 +50,19 @@ func (m SectionModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m SectionModel) moveUp() {
+func (m *SectionModel) moveUp() {
 	if m.cursor > 0 {
 		m.cursor--
 	}
 }
 
-func (m SectionModel) moveDown() {
+func (m *SectionModel) moveDown() {
 	if m.cursor < len(m.Rows)-1 {
 		m.cursor++
 	}
 }
 
-func (m SectionModel) toggleRowSelection() {
+func (m *SectionModel) toggleRowSelection() {
 	m.Rows[m.cursor].RowSelected = !m.Rows[m.cursor].RowSelected
 
 }

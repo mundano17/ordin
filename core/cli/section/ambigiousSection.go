@@ -45,19 +45,19 @@ func (m AmbigiousSection) Init() tea.Cmd {
 	return nil
 }
 
-func (m *AmbigiousSection) moveUp() {
+func (m AmbigiousSection) moveUp() {
 	if m.cursor > 0 {
 		m.cursor--
 	}
 }
 
-func (m *AmbigiousSection) moveDown() {
+func (m AmbigiousSection) moveDown() {
 	if m.cursor < len(m.FileSections)-1 {
 		m.cursor++
 	}
 }
 
-func (m *AmbigiousSection) toggleRowSelection() {
+func (m AmbigiousSection) toggleRowSelection() {
 	m.FileSections[m.cursor].FileFocus = !m.FileSections[m.cursor].FileFocus
 
 }

@@ -14,16 +14,16 @@ func (m model) View() tea.View {
 		if m.cursor == i {
 			cursor = ">"
 		}
-		section_name := ""
+		sectionName := ""
 		switch i {
 		case 0:
-			section_name = "copy"
+			sectionName = "copy"
 		case 1:
-			section_name = "move"
+			sectionName = "move"
 		case 2:
-			section_name = "redundant deletes"
+			sectionName = "redundant deletes"
 		}
-		fmt.Fprintf(&s, "%s%s\n%s\n", cursor, section_name, section.View().Content)
+		fmt.Fprintf(&s, "%s%s\n%s\n", cursor, sectionName, section.View().Content)
 	}
 	// ambigious section View
 	cursor := " "

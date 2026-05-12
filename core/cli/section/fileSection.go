@@ -20,19 +20,19 @@ func (m fileSection) Init() tea.Cmd {
 	return nil
 }
 
-func (m fileSection) moveUp() {
+func (m *fileSection) moveUp() {
 	if m.cursor > 0 {
 		m.cursor--
 	}
 }
 
-func (m fileSection) moveDown() {
+func (m *fileSection) moveDown() {
 	if m.cursor < len(m.Rows)-1 {
 		m.cursor++
 	}
 }
 
-func (m fileSection) radioRowSelect() {
+func (m *fileSection) radioRowSelect() {
 	m.SelectedRow = m.cursor
 
 }

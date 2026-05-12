@@ -1,4 +1,4 @@
-package rule_engine
+package ruleengine
 
 import (
 	"fmt"
@@ -21,8 +21,8 @@ type filterStruct struct {
 	enable     bool
 }
 
-func dataSizeChecker(file_path string, min int, max int, equal int, enable bool) int {
-	info, err := os.Stat(file_path)
+func dataSizeChecker(filePath string, min int, max int, equal int, enable bool) int {
+	info, err := os.Stat(filePath)
 	if err != nil {
 		return -1
 	}
@@ -49,11 +49,11 @@ func planMaker(parameter filterStruct) error {
 			ambigious: mv, mv, mv, .... len(val.movePaths) > 1
 	*/
 	if parameter.moveFlag && parameter.deleteFlag || parameter.deleteFlag && parameter.copyFlag {
-		return fmt.Errorf("delete and move/copy isn't allowed.")
+		return fmt.Errorf("delete and move/copy isn't allowed")
 	}
 
 	for _, path := range parameter.filePaths {
-		var res int = dataSizeChecker(path, parameter.min, parameter.max, parameter.equal, parameter.enable)
+		res := dataSizeChecker(path, parameter.min, parameter.max, parameter.equal, parameter.enable)
 		if res == 0 {
 			continue
 		}
@@ -84,7 +84,6 @@ func planMaker(parameter filterStruct) error {
 }
 
 func Plan(sortedRules []rule, path string) (FilePaths, error) {
-
 	_, err := os.ReadDir(path)
 	if err != nil {
 		return nil, fmt.Errorf("dir path read failed")
@@ -118,16 +117,20 @@ func Plan(sortedRules []rule, path string) (FilePaths, error) {
 			fileAction: &fileAction,
 			filePaths:  filePaths,
 			copyFlag:   (val.ruleData.Action.Copy != ""),
-			deleteFlag: (val.ruleData.Action.Delete),
+			deleteFlag: val.ruleData.Action.Delete,
 			moveFlag:   (val.ruleData.Action.Move != ""),
 			copyDest:   val.ruleData.Action.Copy,
 			moveDest:   val.ruleData.Action.Move,
 			min:        val.ruleData.DataSize.Min,
 			max:        val.ruleData.DataSize.Max,
 			equal:      val.ruleData.DataSize.Equal,
-			enable:     val.ruleData.DataSize.Enable}
+			enable:     val.ruleData.DataSize.Enable,
+		}
 
 		err = planMaker(param)
+		if err != nil {
+			return nil, err
+		}
 
 	}
 	return fileAction, nil

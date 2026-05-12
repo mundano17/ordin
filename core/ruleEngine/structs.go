@@ -1,4 +1,4 @@
-package rule_engine
+package ruleengine
 
 type action struct {
 	Move   string `yaml:"move"`
@@ -36,4 +36,3 @@ type Paths struct {
 	DeleteFlag   bool
 	NoAccessFlag bool
 }
-

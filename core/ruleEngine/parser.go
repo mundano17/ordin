@@ -1,4 +1,5 @@
-package rule_engine
+// Package ruleengine aims to parse, validate, plan and execute rules
+package ruleengine
 
 import (
 	"cmp"
@@ -18,7 +19,6 @@ func getData(data []byte) (map[string]ruleStruct, error) {
 		return nil, err
 	}
 	return t, nil
-
 }
 
 func regexValidator(data string) error {
@@ -47,7 +47,7 @@ func actionValidator(data *action) error {
 	data.Copy = strings.TrimSpace(data.Copy)
 	data.Move = strings.TrimSpace(data.Move)
 
-	if data.Copy == "" && data.Move == "" && data.Delete == false {
+	if data.Copy == "" && data.Move == "" && !data.Delete {
 		return fmt.Errorf("invalid action field, useless action field")
 	}
 
@@ -64,11 +64,9 @@ func actionValidator(data *action) error {
 		}
 		return nil
 	}
-
 }
 
 func dataSizeValidator(data dataSize) error {
-
 	if data == (dataSize{}) {
 		return fmt.Errorf("empty dataSize field")
 	}
@@ -83,26 +81,25 @@ func dataSizeValidator(data dataSize) error {
 		return fmt.Errorf("max is negative")
 	}
 	return nil
-
 }
 
 func validator(data map[string]ruleStruct) error {
 	for key, value := range data {
 		err := regexValidator(value.Name)
 		if err != nil {
-			return fmt.Errorf("Error in %s's name \n %s \n", key, err)
+			return fmt.Errorf("error in %s's name \n %s", key, err)
 		}
 		err = regexValidator(value.Extension)
 		if err != nil {
-			return fmt.Errorf("Error in %s's extension \n %s \n", key, err)
+			return fmt.Errorf("error in %s's extension \n %s", key, err)
 		}
 		err = actionValidator(&value.Action)
 		if err != nil {
-			return fmt.Errorf("Error in %s's action \n %s \n", key, err)
+			return fmt.Errorf("error in %s's action \n %s", key, err)
 		}
 		err = dataSizeValidator(value.DataSize)
 		if err != nil {
-			return fmt.Errorf("Error in %s's data size \n %s \n", key, err)
+			return fmt.Errorf("error in %s's data size \n %s", key, err)
 		}
 	}
 	return nil
@@ -122,7 +119,6 @@ func CheckPipeline(path string) (map[string]ruleStruct, error) {
 		return nil, err
 	}
 	return yamlData, nil
-
 }
 
 func CheckSort(path string) ([]rule, error) {
@@ -152,5 +148,4 @@ func CheckSort(path string) ([]rule, error) {
 	})
 
 	return sortedRules, nil
-
 }
