@@ -1,0 +1,40 @@
+
+version: 2 # <-- This fixes the unsupported version error in v2.x
+
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+
+linters:
+  disable-all: true
+  enable:
+    # --- Core Bug Hunting & Logic Errors ---
+    - govet         
+    - staticcheck   
+    - errcheck      
+    - ineffassign   
+    
+    # --- Security Vulnerabilities ---
+    - gosec         
+    
+    # --- Strict Style & Maintainability ---
+    #- revive        
+    #- goconst       
+    #- gocritic      
+    #- gocyclo       
+    #- unparam       
+    #- dupl          
+    #- nakedret      
+
+linters-settings:
+  gocyclo:
+    min-complexity: 10 
+  goconst:
+    min-len: 2
+    min-occurrences: 2 
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-use-default: false
