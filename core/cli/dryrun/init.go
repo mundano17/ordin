@@ -27,6 +27,7 @@ type model struct {
 	ambgiousSection section.AmbigiousSection
 	deleteSection   section.DeleteSectionModel
 	cursor          int
+	finalPaths      ruleengine.FileOptions
 }
 
 func getSessionPaths(fileActions ruleengine.FilePaths) sessionPaths {
@@ -66,11 +67,18 @@ func getSessionPaths(fileActions ruleengine.FilePaths) sessionPaths {
 	return m
 }
 
-func DryRunTUIInit(fileActions ruleengine.FilePaths) {
+func DryRunTUIInit(fileActions ruleengine.FilePaths) ruleengine.FileOptions {
 	p := tea.NewProgram(dryRunInit(fileActions))
-	if _, err := p.Run(); err != nil {
+	tmodel, err := p.Run()
+	if err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
+	}
+	m, ok := tmodel.(model)
+	if !ok {
+		return nil
+	} else {
+		return m.finalPaths
 	}
 }
 

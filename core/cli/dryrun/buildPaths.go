@@ -1,21 +1,13 @@
-
-
 package dryrun
 
 import (
 	"encoding/json"
 	"os"
+
+	"ordin/m/core/ruleengine"
 )
 
-type FileOptions map[string]Options
-
-type Options struct {
-	MovePaths    []string
-	CopyPaths    []string
-	DeleteFlag   bool
-}
-
-func SavePlan(path string, data FileOptions) error {
+func SavePlan(path string, data ruleengine.FileOptions) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return err
@@ -31,13 +23,13 @@ func SavePlan(path string, data FileOptions) error {
 	return encoder.Encode(data)
 }
 
-func (m model) BuildPaths() FileOptions {
-	fileActions := make(FileOptions)
+func (m model) BuildPaths() ruleengine.FileOptions {
+	fileActions := make(ruleengine.FileOptions)
 
-	getOrCreate := func(path string) Options {
+	getOrCreate := func(path string) ruleengine.Options {
 		val, ok := fileActions[path]
 		if !ok {
-			val = Options{}
+			val = ruleengine.Options{}
 		}
 		return val
 	}

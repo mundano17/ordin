@@ -44,11 +44,11 @@ func CliRunner() *cli.Command {
 				Aliases: []string{"drun"},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					rulesDest := strings.TrimSpace(cmd.Args().Get(0))
-					worlingDest := strings.TrimSpace(cmd.Args().Get(1))
+					workingDest := strings.TrimSpace(cmd.Args().Get(1))
 					if rulesDest == "" {
 						return fmt.Errorf("invalid first argument")
 					}
-					if worlingDest == "" {
+					if workingDest == "" {
 						return fmt.Errorf("invalid second argument")
 					}
 
@@ -56,11 +56,47 @@ func CliRunner() *cli.Command {
 					if err != nil {
 						return err
 					}
-					paths, err := ruleengine.Plan(sortedRules, worlingDest)
+					paths, err := ruleengine.Plan(sortedRules, workingDest)
 					if err != nil {
 						return err
 					}
-					dryrun.DryRunTUIInit(paths)
+					finalPaths := dryrun.DryRunTUIInit(paths)
+					err = dryrun.SavePlan("plan.json", finalPaths)
+					if err != nil {
+						return err
+					}
+					return nil
+				},
+			},
+
+			{
+				Name:    "run",
+				Usage:   "to run",
+				Aliases: []string{"drun"},
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					rulesDest := strings.TrimSpace(cmd.Args().Get(0))
+					workingDest := strings.TrimSpace(cmd.Args().Get(1))
+					if rulesDest == "" {
+						return fmt.Errorf("invalid first argument")
+					}
+					if workingDest == "" {
+						return fmt.Errorf("invalid second argument")
+					}
+
+					sortedRules, err := ruleengine.CheckSort(rulesDest)
+					if err != nil {
+						return err
+					}
+					paths, err := ruleengine.Plan(sortedRules, workingDest)
+					if err != nil {
+						return err
+					}
+					finalPaths := dryrun.DryRunTUIInit(paths)
+					finalStats, err := ruleengine.Executor(finalPaths)
+					if err != nil {
+						return err
+					}
+					fmt.Printf("Successful Operations: %v\nFailed Operations: %v\nRun Complete!", finalStats.Successful.Load(), finalStats.Error.Load())
 					return nil
 				},
 			},

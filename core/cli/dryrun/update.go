@@ -7,14 +7,11 @@ import (
 )
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-
 	if m.cursor < len(m.sections) && m.sections[m.cursor].Focus {
 
-		updated, cmd :=
-			m.sections[m.cursor].Update(msg)
+		updated, cmd := m.sections[m.cursor].Update(msg)
 
-		m.sections[m.cursor] =
-			updated.(section.SectionModel)
+		m.sections[m.cursor] = updated.(section.SectionModel)
 
 		switch msg := msg.(type) {
 		case tea.KeyPressMsg:
@@ -26,11 +23,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	} else if m.cursor == len(m.sections) && m.ambgiousSection.Focus {
 
-		updated, cmd :=
-			m.ambgiousSection.Update(msg)
+		updated, cmd := m.ambgiousSection.Update(msg)
 
-		m.ambgiousSection =
-			updated.(section.AmbigiousSection)
+		m.ambgiousSection = updated.(section.AmbigiousSection)
 
 		switch msg := msg.(type) {
 		case tea.KeyPressMsg:
@@ -42,11 +37,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	} else if m.cursor == len(m.sections)+1 && m.deleteSection.Focus {
 
-		updated, cmd :=
-			m.deleteSection.Update(msg)
+		updated, cmd := m.deleteSection.Update(msg)
 
-		m.deleteSection =
-			updated.(section.DeleteSectionModel)
+		m.deleteSection = updated.(section.DeleteSectionModel)
 
 		switch msg := msg.(type) {
 		case tea.KeyPressMsg:
@@ -79,8 +72,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case "ctrl+s", "s":
-			finalPaths := m.BuildPaths()
-			SavePlan("plan.json", finalPaths)
+			m.finalPaths = m.BuildPaths()
 			return m, tea.Quit
 
 		case "enter":
@@ -104,7 +96,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		}
-
 	}
 	return m, nil
 }

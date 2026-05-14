@@ -6,17 +6,17 @@ import (
 	"os"
 )
 
-type actionType int
+type ActionType int
 
 const (
-	Copy actionType = 1 + iota
+	Copy ActionType = 1 + iota
 	Move
 	Delete
 )
 
 type LogEntry struct {
 	OperationID uint64
-	Action      actionType
+	Action      ActionType
 	SrcPath     string
 	DestPath    string
 }

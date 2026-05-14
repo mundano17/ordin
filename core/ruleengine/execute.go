@@ -1,6 +1,8 @@
 package ruleengine
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -14,6 +16,14 @@ type Options struct {
 	MovePaths  []string
 	CopyPaths  []string
 	DeleteFlag bool
+}
+
+type LogErr struct {
+	Err error
+}
+
+func (e *LogErr) Error() string {
+	return fmt.Sprintf("%v", e.Err)
 }
 
 func sessionInit() (string, error) {
@@ -41,11 +51,7 @@ func sessionInit() (string, error) {
 	return timestamp, err
 }
 
-func nextOperationID(id *atomic.Uint64) uint64 {
-	return id.Add(1)
-}
-
-func fileExecutioner(file Options, srcPath string, deleteDirPath string, operartionID *atomic.Uint64, writer io.Writer) error {
+func fileExecutioner(file Options, srcPath string, deleteDirPath string, operartionID *atomic.Uint64, successfulWriter io.Writer, errorWriter io.Writer, res *RunRes) error {
 	fileName := filepath.Base(srcPath)
 	if len(file.CopyPaths) != 0 {
 		// execute copy command
@@ -56,16 +62,27 @@ func fileExecutioner(file Options, srcPath string, deleteDirPath string, operart
 			}
 			err = copyCommand(srcPath, destPath)
 			if err != nil {
-				return err
+				err = writeLogEntry(LogEntry{
+					incrementer(operartionID),
+					Copy,
+					srcPath,
+					destPath,
+				}, errorWriter)
+				incrementer(&res.Error)
+				if err != nil {
+					return &LogErr{err}
+				}
+				continue
 			}
+			incrementer(&res.Successful)
 			err = writeLogEntry(LogEntry{
-				nextOperationID(operartionID),
+				incrementer(operartionID),
 				Copy,
 				srcPath,
 				destPath,
-			}, writer)
+			}, successfulWriter)
 			if err != nil {
-				return err
+				return &LogErr{err}
 			}
 
 		}
@@ -81,16 +98,27 @@ func fileExecutioner(file Options, srcPath string, deleteDirPath string, operart
 		}
 		err = moveCommand(srcPath, destPath)
 		if err != nil {
-			return err
+			err = writeLogEntry(LogEntry{
+				incrementer(operartionID),
+				Move,
+				srcPath,
+				destPath,
+			}, errorWriter)
+			incrementer(&res.Error)
+			if err != nil {
+				return &LogErr{err}
+			}
+			return nil
 		}
+		incrementer(&res.Successful)
 		err = writeLogEntry(LogEntry{
-			nextOperationID(operartionID),
+			incrementer(operartionID),
 			Move,
 			srcPath,
 			destPath,
-		}, writer)
+		}, successfulWriter)
 		if err != nil {
-			return err
+			return &LogErr{err}
 		}
 
 	}
@@ -102,44 +130,77 @@ func fileExecutioner(file Options, srcPath string, deleteDirPath string, operart
 		}
 		err = delCommand(srcPath, destPath)
 		if err != nil {
-			return err
+			err = writeLogEntry(LogEntry{
+				incrementer(operartionID),
+				Delete,
+				srcPath,
+				destPath,
+			}, errorWriter)
+			incrementer(&res.Error)
+			if err != nil {
+				return &LogErr{err}
+			}
+			return nil
 		}
+		incrementer(&res.Successful)
 		err = writeLogEntry(LogEntry{
-			nextOperationID(operartionID),
+			incrementer(operartionID),
 			Delete,
 			srcPath,
 			destPath,
-		}, writer)
+		}, successfulWriter)
 		if err != nil {
-			return err
+			return &LogErr{err}
 		}
 
 	}
 	return nil
 }
 
-func Executior(allFiles FileOptions) error {
+type RunRes struct {
+	Successful atomic.Uint64
+	Error      atomic.Uint64
+}
+
+func incrementer(a *atomic.Uint64) uint64 {
+	return a.Add(1)
+}
+
+// Executor NOTE: isn't concurrent yet
+func Executor(allFiles FileOptions) (*RunRes, error) {
 	timestamp, err := sessionInit()
+	res := &RunRes{}
 	if err != nil {
-		return err
+		return nil, err
 	}
 	base, err := os.UserConfigDir()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	deleteDirPath := filepath.Join(base, "ordin", "session", timestamp, "delete")
-	logFilePath := filepath.Join(base, "ordin", "session", timestamp, "log", "journal.ndjson")
-	writer, err := getFileWriter(logFilePath)
+	logFilePath := filepath.Join(base, "ordin", "session", timestamp, "log", "successful.ndjson")
+	errorLogFilePath := filepath.Join(base, "ordin", "session", timestamp, "log", "error.ndjson")
+	successfulWriter, err := getFileWriter(logFilePath)
 	if err != nil {
-		_ = writer.Close()
-		return err
+		_ = successfulWriter.Close()
+		return nil, err
 	}
+	errorWriter, err := getFileWriter(errorLogFilePath)
+	if err != nil {
+		_ = errorWriter.Close()
+		return nil, err
+	}
+	defer func() {
+		_ = successfulWriter.Close()
+		_ = errorWriter.Close()
+	}()
 	var operartionID atomic.Uint64
 	for srcPath, options := range allFiles {
-		err := fileExecutioner(options, srcPath, deleteDirPath, &operartionID, writer)
-		if err != nil {
-			return err
+		err := fileExecutioner(options, srcPath, deleteDirPath, &operartionID, successfulWriter, errorWriter, res)
+		if _, ok := errors.AsType[*LogErr](err); ok {
+			// rollback
+			return nil, fmt.Errorf("run terminated: Log Error")
 		}
 	}
-	return nil
+	return res, err
 }
