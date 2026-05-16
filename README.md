@@ -17,4 +17,4 @@ How to run the project:
 - clone the project
 - go build main.go
 - ./main dryrun rules_dest working_dest for dryrun
-- ./main run rules_dest working_dest for dryrun [not recommended yet]
+- ./main run rules_dest working_dest for run [not recommended yet]
