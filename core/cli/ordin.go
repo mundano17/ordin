@@ -8,6 +8,7 @@ import (
 
 	"ordin/m/core/cli/dryrun"
 	"ordin/m/core/ruleengine"
+	"ordin/m/core/ruleengine/executor"
 
 	"github.com/urfave/cli/v3"
 )
@@ -92,7 +93,7 @@ func CliRunner() *cli.Command {
 						return err
 					}
 					finalPaths := dryrun.DryRunTUIInit(paths)
-					finalStats, err := ruleengine.Executor(finalPaths)
+					finalStats, err := executor.Executor(finalPaths)
 					if err != nil {
 						return err
 					}

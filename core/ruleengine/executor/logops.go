@@ -1,4 +1,4 @@
-package ruleengine
+package executor
 
 import (
 	"encoding/json"
@@ -21,6 +21,15 @@ type LogEntry struct {
 	DestPath    string
 }
 
+type ErrLogEntry struct {
+	Action  ActionType
+	SrcPath string
+}
+
+type CleanUpErrLogEntry struct {
+	SrcPath string
+}
+
 func getFileWriter(path string) (*os.File, error) {
 	return os.OpenFile(
 		path,
@@ -30,6 +39,16 @@ func getFileWriter(path string) (*os.File, error) {
 }
 
 func writeLogEntry(entry LogEntry, writer io.Writer) error {
+	encoder := json.NewEncoder(writer)
+	return encoder.Encode(entry)
+}
+
+func writeErrorLogEntry(entry ErrLogEntry, writer io.Writer) error {
+	encoder := json.NewEncoder(writer)
+	return encoder.Encode(entry)
+}
+
+func writeCleanUpErrLogEntry(entry CleanUpErrLogEntry, writer io.Writer) error {
 	encoder := json.NewEncoder(writer)
 	return encoder.Encode(entry)
 }

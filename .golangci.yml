@@ -1,5 +1,5 @@
 
-version: 2 # <-- This fixes the unsupported version error in v2.x
+version: 2 
 
 run:
   timeout: 5m

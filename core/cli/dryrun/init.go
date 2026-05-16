@@ -8,6 +8,7 @@ import (
 
 	"ordin/m/core/cli/section"
 	"ordin/m/core/ruleengine"
+	"ordin/m/core/ruleengine/executor"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -27,7 +28,7 @@ type model struct {
 	ambgiousSection section.AmbigiousSection
 	deleteSection   section.DeleteSectionModel
 	cursor          int
-	finalPaths      ruleengine.FileOptions
+	finalPaths      executor.FileOptions
 }
 
 func getSessionPaths(fileActions ruleengine.FilePaths) sessionPaths {
@@ -67,7 +68,7 @@ func getSessionPaths(fileActions ruleengine.FilePaths) sessionPaths {
 	return m
 }
 
-func DryRunTUIInit(fileActions ruleengine.FilePaths) ruleengine.FileOptions {
+func DryRunTUIInit(fileActions ruleengine.FilePaths) executor.FileOptions {
 	p := tea.NewProgram(dryRunInit(fileActions))
 	tmodel, err := p.Run()
 	if err != nil {

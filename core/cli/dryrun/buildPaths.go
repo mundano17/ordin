@@ -2,12 +2,11 @@ package dryrun
 
 import (
 	"encoding/json"
+	"ordin/m/core/ruleengine/executor"
 	"os"
-
-	"ordin/m/core/ruleengine"
 )
 
-func SavePlan(path string, data ruleengine.FileOptions) error {
+func SavePlan(path string, data executor.FileOptions) error {
 	file, err := os.Create(path)
 	if err != nil {
 		return err
@@ -23,13 +22,13 @@ func SavePlan(path string, data ruleengine.FileOptions) error {
 	return encoder.Encode(data)
 }
 
-func (m model) BuildPaths() ruleengine.FileOptions {
-	fileActions := make(ruleengine.FileOptions)
+func (m model) BuildPaths() executor.FileOptions {
+	fileActions := make(executor.FileOptions)
 
-	getOrCreate := func(path string) ruleengine.Options {
+	getOrCreate := func(path string) executor.Options {
 		val, ok := fileActions[path]
 		if !ok {
-			val = ruleengine.Options{}
+			val = executor.Options{}
 		}
 		return val
 	}
