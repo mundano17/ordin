@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"log"
-	"ordin/m/core/cli"
+	"ordin/cmd"
 	"os"
 )
 
 func main() {
-	cmd := cli.CliRunner()
+	cmd := cmd.CliRunner()
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
 	}
