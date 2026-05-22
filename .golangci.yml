@@ -19,13 +19,13 @@ linters:
     - gosec         
     
     # --- Strict Style & Maintainability ---
-    #- revive        
-    #- goconst       
-    #- gocritic      
-    #- gocyclo       
-    #- unparam       
-    #- dupl          
-    #- nakedret      
+    - revive        
+    - goconst       
+    - gocritic      
+    - gocyclo       
+    - unparam       
+    - dupl          
+    - nakedret      
 
 linters-settings:
   gocyclo:

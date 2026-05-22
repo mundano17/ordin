@@ -31,3 +31,4 @@ go.work.sum
 *.bin
 *.json
 .DS_Store
+/.idea
