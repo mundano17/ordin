@@ -44,17 +44,18 @@ func (r rows) returnChosenRows() []string {
 	return destPaths
 }
 
-func (m model) returnChosenPathActions() map[string]*rules.PathAction {
-	chosenPathActions := map[string]*rules.PathAction{}
+func (m model) returnChosenPathActions() []rules.PathAction {
+	chosenPathActions := []rules.PathAction{}
 	for _, pa := range m.displayPathActions {
 		x := rules.PathInfo{SrcPath: pa.Srcpath, IsSymLink: false, FileName: pa.fileName}
 		y := rules.PathAction{DestPaths: pa.destPaths.returnChosenRows(), ToDelete: pa.toDelete, PathInfo: x}
-		chosenPathActions[pa.Srcpath] = &y
+		chosenPathActions = append(chosenPathActions, y)
 	}
 	return chosenPathActions
 }
 
-func InitializeDryRun(pathActions map[string]*rules.PathAction) map[string]*rules.PathAction {
+// InitializeDryRun - creates and displays the dry run program and then returns the chosen paths
+func InitializeDryRun(pathActions map[string]*rules.PathAction) []rules.PathAction {
 	p := tea.NewProgram(initializeModel(pathActions))
 	tmodel, err := p.Run()
 	if err != nil {

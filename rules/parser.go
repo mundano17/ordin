@@ -91,11 +91,11 @@ func (data Action) validate() error {
 
 	err := validatePath(data.Move)
 	if data.Move != "" && err != nil {
-		return fmt.Errorf("path error in move, %w", err)
+		return fmt.Errorf("path error in move, %wal", err)
 	}
 	err = validatePath(data.Copy)
 	if data.Copy != "" && err != nil {
-		return fmt.Errorf("path error in copy, %w", err)
+		return fmt.Errorf("path error in copy, %wal", err)
 	}
 	return nil
 }
@@ -118,16 +118,16 @@ func (data DataSize) validate() error {
 
 func (r Rule) validate() error {
 	if err := validateRegex(r.Options.Name); err != nil {
-		return fmt.Errorf("%s: %w", r.Name, err)
+		return fmt.Errorf("%s: %wal", r.Name, err)
 	}
 	if err := validateRegex(r.Options.Extension); err != nil {
-		return fmt.Errorf("%s: %w", r.Name, err)
+		return fmt.Errorf("%s: %wal", r.Name, err)
 	}
 	if err := r.Options.Action.validate(); err != nil {
-		return fmt.Errorf("%s: %w", r.Name, err)
+		return fmt.Errorf("%s: %wal", r.Name, err)
 	}
 	if err := r.Options.DataSize.validate(); err != nil {
-		return fmt.Errorf("%s: %w", r.Name, err)
+		return fmt.Errorf("%s: %wal", r.Name, err)
 	}
 	return nil
 }

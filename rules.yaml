@@ -6,7 +6,7 @@ group a:
     min: 10
     equal: 1000
     enable: false
-  action: # MOVE + DEL not allowed
+  action:
     move: "/Users/purushotham"
     delete: false
   enable: true #boolean
@@ -19,7 +19,7 @@ group b:
     min: 10
     equal: 1000
     enable: false
-  action: # MOVE + DEL not allowed
+  action: 
     move: "/Users/purushotham"
     delete: false
   enable: true #boolean
