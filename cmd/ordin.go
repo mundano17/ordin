@@ -15,7 +15,7 @@ import (
 func CliRunner() *cli.Command {
 	cmd := &cli.Command{
 		Name:    "ordin",
-		Usage:   "sort your filez",
+		Usage:   "sort your files",
 		Version: "0.1",
 
 		Commands: []*cli.Command{
@@ -53,6 +53,39 @@ func CliRunner() *cli.Command {
 					}
 
 					sortedRules, err := rules.ValidateAndSort(rulesDest)
+					fmt.Println(sortedRules)
+					if err != nil {
+						return err
+					}
+					paths, err := rules.Planner(sortedRules, workingDest)
+					fmt.Println(paths)
+					if err != nil {
+						return err
+					}
+					dryrun.InitializeDryRun(paths)
+
+					if err != nil {
+						return err
+					}
+					return nil
+				},
+			},
+
+			{
+				Name:    "run",
+				Usage:   "to run",
+				Aliases: []string{"run"},
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					rulesDest := strings.TrimSpace(cmd.Args().Get(0))
+					workingDest := strings.TrimSpace(cmd.Args().Get(1))
+					if rulesDest == "" {
+						return fmt.Errorf("invalid first argument")
+					}
+					if workingDest == "" {
+						return fmt.Errorf("invalid second argument")
+					}
+
+					sortedRules, err := rules.ValidateAndSort(rulesDest)
 					if err != nil {
 						return err
 					}
@@ -60,7 +93,12 @@ func CliRunner() *cli.Command {
 					if err != nil {
 						return err
 					}
-					dryrun.InitializeDryRun(paths)
+					dirs := dryrun.InitializeDryRun(paths)
+					res, err := rules.Execute(dirs)
+					fmt.Printf("Successful Transactions: %d\nFailed Transactions: %d", res.Successful.Load(), res.Error.Load())
+					if res.Error.Load() > 0 {
+						// Apply WAL Recovery
+					}
 
 					if err != nil {
 						return err
