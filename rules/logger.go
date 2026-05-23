@@ -29,7 +29,7 @@ type OperationLog struct {
 
 type OperationCommit struct {
 	LogType     LogType
-	operationID uint64
+	OperationID uint64
 }
 
 func getFileWriter(path string) (*os.File, error) {

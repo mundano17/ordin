@@ -21,9 +21,13 @@ type PathAction struct {
 }
 
 func (p PathInfo) matchesDataSize(size DataSize, fileSize int64) bool {
-	if !size.Enable || p.IsSymLink {
+	if p.IsSymLink {
 		return false
 	}
+	if !size.Enable {
+		return true
+	}
+
 	if fileSize < int64(size.Min) {
 		return false
 	}
@@ -66,7 +70,7 @@ func Planner(rules Rules, workingDir string) (map[string]*PathAction, error) {
 		re   *regexp.Regexp
 	}
 
-	compiled := []compiledRule{}
+	var compiled []compiledRule
 
 	for _, rule := range rules {
 		pattern := fmt.Sprintf("%s.*%s$", rule.Options.Name, rule.Options.Extension)
@@ -81,7 +85,6 @@ func Planner(rules Rules, workingDir string) (map[string]*PathAction, error) {
 		if err != nil {
 			return err
 		}
-
 		f, err := os.Lstat(p)
 		if err != nil {
 			return err
