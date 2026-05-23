@@ -7,31 +7,23 @@ import (
 
 	"ordin/rules"
 
+	"charm.land/bubbles/v2/help"
 	tea "charm.land/bubbletea/v2"
 )
 
 type model struct {
 	displayPathActions []displayPathAction
 	cursor             int
+	keys               keyMap
+	help               help.Model
 }
 
 func getRows(destPaths []string) []row {
 	rows := []row{}
 	for _, path := range destPaths {
-		rows = append(rows, row{path: path, selected: false})
+		rows = append(rows, row{path: path, selected: true})
 	}
 	return rows
-}
-
-func getDisplayPathAction(pathAction rules.PathAction) displayPathAction {
-	return displayPathAction{
-		destPaths: getRows(pathAction.DestPaths),
-		toDelete:  pathAction.ToDelete,
-		fileName:  pathAction.PathInfo.FileName,
-		cursor:    0,
-		focused:   false,
-		Srcpath:   pathAction.PathInfo.SrcPath,
-	}
 }
 
 func (r rows) returnChosenRows() []string {

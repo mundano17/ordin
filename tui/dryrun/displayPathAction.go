@@ -2,8 +2,11 @@ package dryrun
 
 import (
 	"fmt"
+	"ordin/rules"
 	"strings"
 
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 )
 
@@ -21,6 +24,63 @@ type displayPathAction struct {
 	Srcpath   string
 	cursor    int
 	focused   bool
+	keys      displayPathActionKeyMap
+	help      help.Model
+}
+
+type displayPathActionKeyMap struct {
+	Up     key.Binding
+	Down   key.Binding
+	Space  key.Binding
+	Help   key.Binding
+	Escape key.Binding
+}
+
+var displayPathActionKeys = displayPathActionKeyMap{
+	Up: key.NewBinding(
+		key.WithKeys("up", "k"),
+		key.WithHelp("↑/k", "move up"),
+	),
+	Down: key.NewBinding(
+		key.WithKeys("down", "j"),
+		key.WithHelp("↓/j", "move down"),
+	),
+	Space: key.NewBinding(
+		key.WithKeys("space"),
+		key.WithHelp("Space", "select file"),
+	),
+	Help: key.NewBinding(
+		key.WithKeys("?"),
+		key.WithHelp("?", " help "),
+	),
+	Escape: key.NewBinding(
+		key.WithKeys("esc"),
+		key.WithHelp("Esc", "return to file selection"),
+	),
+}
+
+func (k displayPathActionKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Help, k.Escape}
+}
+
+func (k displayPathActionKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Up, k.Down, k.Space}, // first column
+		{k.Help, k.Escape},      // second column
+	}
+}
+
+func getDisplayPathAction(pathAction rules.PathAction) displayPathAction {
+	return displayPathAction{
+		destPaths: getRows(pathAction.DestPaths),
+		toDelete:  pathAction.ToDelete,
+		fileName:  pathAction.PathInfo.FileName,
+		cursor:    0,
+		focused:   false,
+		Srcpath:   pathAction.PathInfo.SrcPath,
+		help:      help.Model{},
+		keys:      displayPathActionKeys,
+	}
 }
 
 func (m displayPathAction) Init() tea.Cmd { return nil }
@@ -28,18 +88,20 @@ func (m displayPathAction) Init() tea.Cmd { return nil }
 func (m displayPathAction) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
-		switch msg.String() {
-		case "up", "j":
+		switch {
+		case key.Matches(msg, m.keys.Up):
 			if m.cursor > 0 {
 				m.cursor--
 			}
-		case "down", "k":
+		case key.Matches(msg, m.keys.Down):
 			if m.cursor < len(m.destPaths)-1 {
-				m.cursor--
+				m.cursor++
 			}
-		case "space":
-			m.destPaths[m.cursor].selected = true
-		case "Esc":
+		case key.Matches(msg, m.keys.Space):
+			m.destPaths[m.cursor].selected = !m.destPaths[m.cursor].selected
+		case key.Matches(msg, m.keys.Help):
+			m.help.ShowAll = !m.help.ShowAll
+		case key.Matches(msg, m.keys.Escape):
 			m.focused = false
 		}
 	}
