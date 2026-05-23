@@ -5,12 +5,12 @@ A rule-based file organizer with a TUI, built in Go. Define rules in a YAML file
 > ⚠️ Work in progress. Recovery from failed transactions is not yet implemented. Use at your own risk.
 
 
-Run Demo:
+## Run Demo:
 ![run demo](images/run.png)
 
 Both dryrun and run has the same interface as above, dryrun just lets you see what changes will occur and run will execute it.
 
-Log Demo:
+## Log Demo:
 ![log demo](images/log.png)
 
 ---
