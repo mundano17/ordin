@@ -97,7 +97,7 @@ type WAL struct {
 func (w *WAL) logCommit(operationID uint64) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	commitLog := OperationCommit{LogType: OperationCommitted, operationID: operationID}
+	commitLog := OperationCommit{LogType: OperationCommitted, OperationID: operationID}
 	return commitLog.SaveLog(w.path)
 }
 

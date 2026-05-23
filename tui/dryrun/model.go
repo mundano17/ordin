@@ -10,7 +10,11 @@ import (
 )
 
 func initializeModel(pathActions map[string]*rules.PathAction) model {
-	displayPathActions := []displayPathAction{}
+	if len(pathActions) == 0 {
+		fmt.Println("no path actions")
+		return model{}
+	}
+	var displayPathActions []displayPathAction
 	for _, pathAction := range pathActions {
 		displayPathActions = append(displayPathActions, getDisplayPathAction(*pathAction))
 	}
@@ -47,7 +51,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "down", "k":
 			if m.cursor < len(m.displayPathActions)-1 {
-				m.cursor--
+				m.cursor++
 			}
 		case "space":
 			m.displayPathActions[m.cursor].focused = true
@@ -63,16 +67,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() tea.View {
 	s := strings.Builder{}
-	for i, displayPathAction := range m.displayPathActions {
+	for i, displaypa := range m.displayPathActions {
 		cursor := " "
 		if i == m.cursor {
 			cursor = ">>"
 		}
 		delStatus := "DISABLED"
-		if displayPathAction.toDelete {
+		if displaypa.toDelete {
 			delStatus = "ENABLED"
 		}
-		fmt.Fprintf(&s, "%s %s %s/n%s/n", cursor, displayPathAction.Srcpath, delStatus, displayPathAction.View().Content)
+		fmt.Fprintf(&s, "%s %s %s\n%s\n", cursor, displaypa.Srcpath, delStatus, displaypa.View().Content)
 	}
 	return tea.NewView(s.String())
 }

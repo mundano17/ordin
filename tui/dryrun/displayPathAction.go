@@ -48,9 +48,9 @@ func (m displayPathAction) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m displayPathAction) View() tea.View {
 	var s strings.Builder
-	if m.toDelete {
-		fmt.Fprintf(&s, "%s", "DELETE ENABLED")
-	}
+	//if m.toDelete {
+	//	fmt.Fprintf(&s, "%s", "DELETE ENABLED")
+	//}
 	fmt.Fprintf(&s, "%s\n", "")
 	for i, row := range m.destPaths {
 		cursor := " "
