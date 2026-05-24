@@ -97,7 +97,7 @@ func (w *WAL) logCommit(operationID uint64, file *os.File) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	commitLog := OperationCommit{LogType: OperationCommitted, OperationID: operationID}
-	return commitLog.SaveLog(w.path, file)
+	return commitLog.SaveLog(file)
 }
 
 func (w *WAL) logCopyOperation(srcPath string, destPath string, operationID uint64, file *os.File) error {
@@ -110,7 +110,7 @@ func (w *WAL) logCopyOperation(srcPath string, destPath string, operationID uint
 		DestPath:    destPath,
 		Action:      Copy,
 	}
-	return oplog.SaveLog(w.path, file)
+	return oplog.SaveLog(file)
 }
 
 func (w *WAL) logTrashOperation(srcPath string, destPath string, operationID uint64, file *os.File) error {
@@ -123,5 +123,5 @@ func (w *WAL) logTrashOperation(srcPath string, destPath string, operationID uin
 		DestPath:    destPath,
 		Action:      Trash,
 	}
-	return oplog.SaveLog(w.path, file)
+	return oplog.SaveLog(file)
 }

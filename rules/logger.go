@@ -40,7 +40,7 @@ func getFileWriter(path string) (*os.File, error) {
 	)
 }
 
-func (entry OperationLog) SaveLog(path string, file *os.File) error {
+func (entry OperationLog) SaveLog(file *os.File) error {
 
 	encoder := json.NewEncoder(file)
 	err := encoder.Encode(entry)
@@ -50,7 +50,7 @@ func (entry OperationLog) SaveLog(path string, file *os.File) error {
 	return file.Sync()
 }
 
-func (entry OperationCommit) SaveLog(path string, file *os.File) error {
+func (entry OperationCommit) SaveLog(file *os.File) error {
 
 	encoder := json.NewEncoder(file)
 	err := encoder.Encode(entry)
