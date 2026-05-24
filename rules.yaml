@@ -1,26 +1,13 @@
-group a:
-  name: '(?i)ordin'
-  extension: '\.go'
+module 6 files:
+  name: '(?i)module.{0,2}6'
+  extension: '.'
   dataSize:
-    max: 1000
-    min: 10
-    equal: 1000
+    max: 0
+    min: 0
+    equal: 0
     enable: false
   action:
-    move: "/Users/purushotham"
+    move: "/Users/purushotham/Downloads"
     delete: false
-  enable: true #boolean
-  priority: 1 #some int
-
-group b:
-  name: "(?i)parser"
-  dataSize:
-    max: 1000
-    min: 10
-    equal: 1000
-    enable: false
-  action: 
-    move: "/Users/purushotham"
-    delete: false
-  enable: true #boolean
-  priority: 1 #some int
+  enable: true
+  priority: 1

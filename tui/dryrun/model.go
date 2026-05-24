@@ -126,20 +126,22 @@ func (m model) View() tea.View {
 
 	helpView := m.help.View(m.keys)
 	s := strings.Builder{}
-	for i, displaypa := range m.displayPathActions {
-		cursor := " "
-		if i == m.cursor {
-			cursor = ">>"
+	if len(m.displayPathActions) > 0 {
+		for i, displaypa := range m.displayPathActions {
+			cursor := " "
+			if i == m.cursor {
+				cursor = ">>"
+			}
+			delStatus := "DELETE DISABLED"
+			if displaypa.toDelete {
+				delStatus = "DELETE ENABLED"
+			}
+			if i == m.cursor && m.displayPathActions[m.cursor].focused {
+				helpView = m.displayPathActions[m.cursor].help.View(m.displayPathActions[m.cursor].keys)
+			}
+			_, _ = fmt.Fprintf(&s, "%s %s %s\n%s\n", cursor, displaypa.Srcpath, delStatus, displaypa.View().Content)
 		}
-		delStatus := "DELETE DISABLED"
-		if displaypa.toDelete {
-			delStatus = "DELETE ENABLED"
-		}
-		if i == m.cursor && m.displayPathActions[m.cursor].focused {
-			helpView = m.displayPathActions[m.cursor].help.View(m.displayPathActions[m.cursor].keys)
-		}
-		_, _ = fmt.Fprintf(&s, "%s %s %s\n%s\n", cursor, displaypa.Srcpath, delStatus, displaypa.View().Content)
+		return tea.NewView(s.String() + "\n" + helpView)
 	}
-
-	return tea.NewView(s.String() + "\n" + helpView)
+	return tea.NewView("No path actions available, press q to quit")
 }

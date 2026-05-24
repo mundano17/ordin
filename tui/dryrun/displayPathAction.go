@@ -34,6 +34,7 @@ type displayPathActionKeyMap struct {
 	Space  key.Binding
 	Help   key.Binding
 	Escape key.Binding
+	Delete key.Binding
 }
 
 var displayPathActionKeys = displayPathActionKeyMap{
@@ -57,6 +58,10 @@ var displayPathActionKeys = displayPathActionKeyMap{
 		key.WithKeys("esc"),
 		key.WithHelp("Esc", "return to file selection"),
 	),
+	Delete: key.NewBinding(
+		key.WithKeys("d"),
+		key.WithHelp("d", "delete file"),
+	),
 }
 
 func (k displayPathActionKeyMap) ShortHelp() []key.Binding {
@@ -65,8 +70,8 @@ func (k displayPathActionKeyMap) ShortHelp() []key.Binding {
 
 func (k displayPathActionKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.Up, k.Down, k.Space}, // first column
-		{k.Help, k.Escape},      // second column
+		{k.Up, k.Down, k.Space, k.Delete}, // first column
+		{k.Help, k.Escape},                // second column
 	}
 }
 
@@ -75,11 +80,16 @@ func getDisplayPathAction(pathAction rules.PathAction) displayPathAction {
 		destPaths: getRows(pathAction.DestPaths),
 		toDelete:  pathAction.ToDelete,
 		fileName:  pathAction.PathInfo.FileName,
-		cursor:    0,
-		focused:   false,
-		Srcpath:   pathAction.PathInfo.SrcPath,
-		help:      help.Model{},
-		keys:      displayPathActionKeys,
+		cursor: func() int {
+			if len(pathAction.DestPaths) > 0 {
+				return 0
+			}
+			return -1
+		}(),
+		focused: false,
+		Srcpath: pathAction.PathInfo.SrcPath,
+		help:    help.Model{},
+		keys:    displayPathActionKeys,
 	}
 }
 
@@ -99,6 +109,8 @@ func (m displayPathAction) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case key.Matches(msg, m.keys.Space):
 			m.destPaths[m.cursor].selected = !m.destPaths[m.cursor].selected
+		case key.Matches(msg, m.keys.Delete):
+			m.toDelete = !m.toDelete
 		case key.Matches(msg, m.keys.Help):
 			m.help.ShowAll = !m.help.ShowAll
 		case key.Matches(msg, m.keys.Escape):

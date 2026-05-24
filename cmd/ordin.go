@@ -53,12 +53,14 @@ func CliRunner() *cli.Command {
 					}
 
 					sortedRules, err := rules.ValidateAndSort(rulesDest)
-					fmt.Println(sortedRules)
 					if err != nil {
 						return err
 					}
 					paths, err := rules.Planner(sortedRules, workingDest)
-					fmt.Println(paths)
+					if len(paths) == 0 {
+						return fmt.Errorf("no paths found")
+
+					}
 					if err != nil {
 						return err
 					}
@@ -92,6 +94,10 @@ func CliRunner() *cli.Command {
 					paths, err := rules.Planner(sortedRules, workingDest)
 					if err != nil {
 						return err
+					}
+					if len(paths) == 0 {
+						return fmt.Errorf("no paths found")
+
 					}
 					dirs := dryrun.InitializeDryRun(paths)
 					res, err := rules.Execute(dirs)

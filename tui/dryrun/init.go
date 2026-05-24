@@ -41,7 +41,10 @@ func (m model) returnChosenPathActions() []rules.PathAction {
 	for _, pa := range m.displayPathActions {
 		x := rules.PathInfo{SrcPath: pa.Srcpath, IsSymLink: false, FileName: pa.fileName}
 		y := rules.PathAction{DestPaths: pa.destPaths.returnChosenRows(), ToDelete: pa.toDelete, PathInfo: x}
-		chosenPathActions = append(chosenPathActions, y)
+		if len(y.DestPaths) != 0 {
+			chosenPathActions = append(chosenPathActions, y)
+		}
+
 	}
 	return chosenPathActions
 }
