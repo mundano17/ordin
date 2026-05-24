@@ -73,7 +73,7 @@ func initializeModel(pathActions map[string]*rules.PathAction) model {
 	for _, pathAction := range pathActions {
 		displayPathActions = append(displayPathActions, getDisplayPathAction(*pathAction))
 	}
-	return model{displayPathActions: displayPathActions, cursor: 0, keys: keys, help: help.Model{}}
+	return model{displayPathActions: displayPathActions, cursor: 0, keys: keys, help: help.Model{}, confirmed: false}
 }
 
 func (m model) Init() tea.Cmd {
@@ -115,6 +115,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Quit):
 			return m, tea.Quit
 		case key.Matches(msg, m.keys.Save):
+			m.confirmed = true
 			return m, tea.Quit
 		}
 	}

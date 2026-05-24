@@ -16,6 +16,7 @@ type model struct {
 	cursor             int
 	keys               keyMap
 	help               help.Model
+	confirmed          bool
 }
 
 func getRows(destPaths []string) []row {
@@ -41,10 +42,7 @@ func (m model) returnChosenPathActions() []rules.PathAction {
 	for _, pa := range m.displayPathActions {
 		x := rules.PathInfo{SrcPath: pa.Srcpath, IsSymLink: false, FileName: pa.fileName}
 		y := rules.PathAction{DestPaths: pa.destPaths.returnChosenRows(), ToDelete: pa.toDelete, PathInfo: x}
-		if len(y.DestPaths) != 0 {
-			chosenPathActions = append(chosenPathActions, y)
-		}
-
+		chosenPathActions = append(chosenPathActions, y)
 	}
 	return chosenPathActions
 }
@@ -58,7 +56,7 @@ func InitializeDryRun(pathActions map[string]*rules.PathAction) []rules.PathActi
 		os.Exit(1)
 	}
 	m, ok := tmodel.(model)
-	if !ok {
+	if !ok || !m.confirmed {
 		return nil
 	}
 	return m.returnChosenPathActions()
