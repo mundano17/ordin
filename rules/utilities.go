@@ -11,20 +11,19 @@ import (
 
 func giveDestPath(basepath string) (string, error) {
 	counter := 0
-	path := appendCounter(basepath, counter)
 	for {
-		_, err := os.Stat(path)
-
-		if !errors.Is(err, os.ErrNotExist) && err != nil {
-			return "", err
+		path := appendCounter(basepath, counter)
+		f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+		if err == nil {
+			_ = f.Close()
+			return path, nil
 		}
-		if err != nil {
-			break
+		if errors.Is(err, os.ErrExist) {
+			counter++
+			continue
 		}
-		counter++
-		path = appendCounter(basepath, counter)
+		return "", err
 	}
-	return path, nil
 }
 
 func appendCounter(basepath string, counter int) string {
@@ -94,14 +93,14 @@ type WAL struct {
 	path string
 }
 
-func (w *WAL) logCommit(operationID uint64) error {
+func (w *WAL) logCommit(operationID uint64, file *os.File) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	commitLog := OperationCommit{LogType: OperationCommitted, OperationID: operationID}
-	return commitLog.SaveLog(w.path)
+	return commitLog.SaveLog(w.path, file)
 }
 
-func (w *WAL) logCopyOperation(srcPath string, destPath string, operationID uint64) error {
+func (w *WAL) logCopyOperation(srcPath string, destPath string, operationID uint64, file *os.File) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	oplog := OperationLog{
@@ -111,10 +110,10 @@ func (w *WAL) logCopyOperation(srcPath string, destPath string, operationID uint
 		DestPath:    destPath,
 		Action:      Copy,
 	}
-	return oplog.SaveLog(w.path)
+	return oplog.SaveLog(w.path, file)
 }
 
-func (w *WAL) logTrashOperation(srcPath string, destPath string, operationID uint64) error {
+func (w *WAL) logTrashOperation(srcPath string, destPath string, operationID uint64, file *os.File) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	oplog := OperationLog{
@@ -124,5 +123,5 @@ func (w *WAL) logTrashOperation(srcPath string, destPath string, operationID uin
 		DestPath:    destPath,
 		Action:      Trash,
 	}
-	return oplog.SaveLog(w.path)
+	return oplog.SaveLog(w.path, file)
 }

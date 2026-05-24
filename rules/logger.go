@@ -40,34 +40,20 @@ func getFileWriter(path string) (*os.File, error) {
 	)
 }
 
-func (entry OperationLog) SaveLog(path string) error {
-	file, err := getFileWriter(path)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = file.Close()
-	}()
+func (entry OperationLog) SaveLog(path string, file *os.File) error {
 
 	encoder := json.NewEncoder(file)
-	err = encoder.Encode(entry)
+	err := encoder.Encode(entry)
 	if err != nil {
 		return err
 	}
 	return file.Sync()
 }
 
-func (entry OperationCommit) SaveLog(path string) error {
-	file, err := getFileWriter(path)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = file.Close()
-	}()
+func (entry OperationCommit) SaveLog(path string, file *os.File) error {
 
 	encoder := json.NewEncoder(file)
-	err = encoder.Encode(entry)
+	err := encoder.Encode(entry)
 	if err != nil {
 		return err
 	}
