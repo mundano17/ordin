@@ -11,36 +11,37 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// TODO concurrent executor
-// TODO Fix the copyFileToDestination Function
-
-func executeCopyOperation(srcPath string, destPath string, operationID uint64, w *WAL, file *os.File) (error, error) {
+func executeCopyOperation(srcPath string, destPath string, operationID uint64, w *WAL, file *os.File, errFile *os.File) (error, error) {
 	err := w.logCopyOperation(srcPath, destPath, operationID, file)
 	if err != nil {
+		_ = w.logErrorOperation(srcPath, destPath, operationID, Copy, err, errFile)
 		return err, nil
 	}
 	err = copyFileToDestinationPath(srcPath, destPath)
 	if err != nil {
+		_ = w.logErrorOperation(srcPath, destPath, operationID, Copy, err, errFile)
 		return nil, err
 	}
 	err = w.logCommit(operationID, file)
 	return err, nil
 }
 
-func executeTrashOperation(srcPath string, destPath string, operationID uint64, w *WAL, file *os.File) (error, error) {
+func executeTrashOperation(srcPath string, destPath string, operationID uint64, w *WAL, file *os.File, errFile *os.File) (error, error) {
 	err := w.logTrashOperation(srcPath, destPath, operationID, file)
 	if err != nil {
-		return err, nil
+		_ = w.logErrorOperation(srcPath, destPath, operationID, Trash, err, errFile)
+		return nil, err
 	}
 	err = moveFileToTrash(srcPath, destPath)
 	if err != nil {
+		_ = w.logErrorOperation(srcPath, destPath, operationID, Trash, err, errFile)
 		return nil, err
 	}
 	err = w.logCommit(operationID, file)
 	return err, nil
 }
 
-func (p PathAction) execute(sesPath *sessionPath, res *RunRes, opID *atomic.Uint64, file *os.File) error {
+func (p PathAction) execute(sesPath *sessionPath, res *RunRes, opID *atomic.Uint64, file *os.File, errFile *os.File) error {
 	copyErr := false
 	srcPath, err := filepath.Abs(p.PathInfo.SrcPath)
 	if err != nil {
@@ -61,7 +62,7 @@ func (p PathAction) execute(sesPath *sessionPath, res *RunRes, opID *atomic.Uint
 			res.incrementerError()
 			continue
 		}
-		logError, operationError := executeCopyOperation(srcPath, destPath, currentOperationId, &sesPath.wal, file)
+		logError, operationError := executeCopyOperation(srcPath, destPath, currentOperationId, &sesPath.wal, file, errFile)
 		if logError != nil {
 			return logError
 		}
@@ -87,7 +88,7 @@ func (p PathAction) execute(sesPath *sessionPath, res *RunRes, opID *atomic.Uint
 			return nil
 		}
 		currentOperationId := opID.Add(1)
-		logError, operationError := executeTrashOperation(srcPath, destPath, currentOperationId, &sesPath.wal, file)
+		logError, operationError := executeTrashOperation(srcPath, destPath, currentOperationId, &sesPath.wal, file, errFile)
 		if logError != nil {
 			return logError
 		}
@@ -129,7 +130,8 @@ func sessionInit() (sessionPath, error) {
 		return sessionPath{}, err
 	}
 	logPath := filepath.Join(logDirPath, "log.ndjson")
-	return sessionPath{trashpath: trashPath, wal: WAL{path: logPath, mu: sync.Mutex{}}}, nil
+	errPath := filepath.Join(logDirPath, "err.ndjson")
+	return sessionPath{trashpath: trashPath, wal: WAL{path: logPath, mu: sync.Mutex{}, errPath: errPath}}, nil
 }
 
 type RunRes struct {
@@ -151,6 +153,7 @@ type Job struct {
 	opID    *atomic.Uint64
 	pa      PathAction
 	file    *os.File
+	errFile *os.File
 }
 
 func worker(ctx context.Context, jobs chan Job) error {
@@ -160,7 +163,7 @@ func worker(ctx context.Context, jobs chan Job) error {
 			return nil
 
 		default:
-			err := job.pa.execute(job.sesPath, job.res, job.opID, job.file)
+			err := job.pa.execute(job.sesPath, job.res, job.opID, job.file, job.errFile)
 			if err != nil {
 				return err
 			}
@@ -180,8 +183,16 @@ func Execute(pathActions []PathAction) (*RunRes, error) {
 		return res, err
 	}
 	file, err := getFileWriter(sesPath.wal.path)
+	if err != nil {
+		return res, err
+	}
+	errFile, err := getFileWriter(sesPath.wal.errPath)
+	if err != nil {
+		return res, err
+	}
 	defer func() {
 		_ = file.Close()
+		_ = errFile.Close()
 	}()
 	if err != nil {
 		return res, err
@@ -195,7 +206,7 @@ func Execute(pathActions []PathAction) (*RunRes, error) {
 	}
 
 	for _, pathAction := range pathActions {
-		newJob := Job{sesPath: &sesPath, opID: opID, res: res, pa: pathAction, file: file}
+		newJob := Job{sesPath: &sesPath, opID: opID, res: res, pa: pathAction, file: file, errFile: errFile}
 		select {
 		case jobs <- newJob:
 		case <-ctx.Done():

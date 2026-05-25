@@ -36,7 +36,6 @@ func appendCounter(basepath string, counter int) string {
 	return path
 }
 
-// TODO : Read more about the ways to make a file transaction more atomic and what each part does in the code and fix the below function.
 func copyFileToDestinationPath(srcPath string, destPath string) error {
 	srcFile, err := os.Open(srcPath)
 	if err != nil {
@@ -69,6 +68,7 @@ func copyFileToDestinationPath(srcPath string, destPath string) error {
 		return err
 	}
 
+	_ = os.Remove(destPath)
 	err = os.Rename(tempPath, destPath)
 	if err != nil {
 		return err
@@ -89,8 +89,23 @@ func moveFileToTrash(srcPath string, trashpath string) error {
 }
 
 type WAL struct {
-	mu   sync.Mutex
-	path string
+	mu      sync.Mutex
+	path    string
+	errPath string
+}
+
+func (w *WAL) logErrorOperation(srcPath string, destPath string, operationID uint64, action ActionType, err error, file *os.File) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	oplog := ErrorLog{
+		LogType:     OperationBegin,
+		OperationID: operationID,
+		SrcPath:     srcPath,
+		DestPath:    destPath,
+		Action:      action,
+		Error:       err.Error(),
+	}
+	return oplog.SaveLog(file)
 }
 
 func (w *WAL) logCommit(operationID uint64, file *os.File) error {
