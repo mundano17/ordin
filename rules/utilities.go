@@ -58,6 +58,7 @@ func copyFileToDestinationPath(srcPath string, destPath string) error {
 			_ = os.Remove(tempPath)
 		}
 	}()
+
 	_, err = io.Copy(tempFile, srcFile)
 	if err != nil {
 		return err
@@ -69,6 +70,10 @@ func copyFileToDestinationPath(srcPath string, destPath string) error {
 	}
 
 	_ = os.Remove(destPath)
+	err = tempFile.Close()
+	if err != nil {
+		return err
+	}
 	err = os.Rename(tempPath, destPath)
 	if err != nil {
 		return err
