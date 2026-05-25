@@ -97,7 +97,6 @@ Multiple rules can be defined in the same file. Rules are sorted by priority bef
 
 ## Roadmap
 
-- [ ] Recovery from failed transactions using WAL
 - [ ] Folder watcher + automation mode
 - [ ] Bug fixes and broader testing
 - [ ] Fix datasize in yaml to allow users to write KB, MB, etc
