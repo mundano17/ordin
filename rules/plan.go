@@ -27,7 +27,14 @@ func (p PathInfo) matchesDataSize(size DataSize, fileSize int64) bool {
 	if !size.Enable {
 		return true
 	}
-
+	switch size.Unit {
+	case "KB":
+		fileSize /= 1024
+	case "MB":
+		fileSize /= 1024 * 1024
+	case "GB":
+		fileSize /= 1024 * 1024 * 1024
+	}
 	if fileSize < int64(size.Min) {
 		return false
 	}

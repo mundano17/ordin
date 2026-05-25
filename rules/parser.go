@@ -19,10 +19,11 @@ type Action struct {
 }
 
 type DataSize struct {
-	Enable bool `yaml:"enable"`
-	Max    int  `yaml:"max,omitempty"`
-	Min    int  `yaml:"min,omitempty"`
-	Equal  int  `yaml:"equal,omitempty"`
+	Enable bool    `yaml:"enable"`
+	Max    float32 `yaml:"max,omitempty"`
+	Min    float32 `yaml:"min,omitempty"`
+	Equal  float32 `yaml:"equal,omitempty"`
+	Unit   string  `yaml:"unit,omitempty"`
 }
 
 type RuleOptions struct {
@@ -82,6 +83,7 @@ func (r *RuleOptions) normalize() {
 	}
 	r.Action.Copy = strings.TrimSpace(r.Action.Copy)
 	r.Action.Move = strings.TrimSpace(r.Action.Move)
+	r.DataSize.Unit = strings.ToUpper(strings.TrimSpace(r.DataSize.Unit))
 }
 
 func (data Action) validate() error {
@@ -101,6 +103,9 @@ func (data Action) validate() error {
 }
 
 func (data DataSize) validate() error {
+	if data.Unit != "KB" && data.Unit != "MB" && data.Unit != "GB" {
+		return fmt.Errorf("invalid data unit, use 'KB' or 'MB' or 'GB'")
+	}
 	if data.Min < 0 {
 		return fmt.Errorf("min is negative")
 	}
