@@ -101,14 +101,32 @@ func CliRunner() *cli.Command {
 					}
 					dirs := dryrun.InitializeDryRun(paths)
 					res, err := rules.Execute(dirs)
-					fmt.Printf("Successful Transactions: %d\nFailed Transactions: %d", res.Successful.Load(), res.Error.Load())
+					fmt.Printf("Successful Transactions: %d\nFailed Transactions: %d\n", res.Successful.Load(), res.Error.Load())
 					if res.Error.Load() > 0 {
-						// Apply WAL Recovery
+						res, err := rules.Recover()
+						if err != nil {
+							return err
+						}
+						fmt.Println("Initiating Recovery Over Failed Transactions")
+						fmt.Printf("Successful Transactions: %d\nFailed Transactions: %d", res.Successful.Load(), res.Error.Load())
 					}
 
 					if err != nil {
 						return err
 					}
+					return nil
+				},
+			},
+			{
+				Name:  "recover",
+				Usage: "to recover",
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					res, err := rules.Recover()
+					if err != nil {
+						return err
+					}
+					fmt.Println("Initiating Recovery Over Failed Transactions")
+					fmt.Printf("Successful Transactions: %d\nFailed Transactions: %d", res.Successful.Load(), res.Error.Load())
 					return nil
 				},
 			},
