@@ -71,6 +71,7 @@ group a:
     min: 0
     max: 0
     equal: 0
+    unit: "MB"                 # can be KB,MB or GB
   action:
     move: "/Users/you/Downloads"   # move to this path (soft delete from source)
     copy: ""                       # copy to this path (keeps original)
