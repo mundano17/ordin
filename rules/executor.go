@@ -14,7 +14,6 @@ import (
 func executeCopyOperation(srcPath string, destPath string, operationID uint64, w *WAL, file *os.File, errFile *os.File) (error, error) {
 	err := w.logCopyOperation(srcPath, destPath, operationID, file)
 	if err != nil {
-		_ = w.logErrorOperation(srcPath, destPath, operationID, Copy, err, errFile)
 		return err, nil
 	}
 	err = copyFileToDestinationPath(srcPath, destPath)
@@ -29,7 +28,6 @@ func executeCopyOperation(srcPath string, destPath string, operationID uint64, w
 func executeTrashOperation(srcPath string, destPath string, operationID uint64, w *WAL, file *os.File, errFile *os.File) (error, error) {
 	err := w.logTrashOperation(srcPath, destPath, operationID, file)
 	if err != nil {
-		_ = w.logErrorOperation(srcPath, destPath, operationID, Trash, err, errFile)
 		return nil, err
 	}
 	err = moveFileToTrash(srcPath, destPath)
