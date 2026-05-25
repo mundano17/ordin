@@ -7,7 +7,7 @@ module 6 files:
     equal: 0
     enable: false
   action:
-    move: "/Users/purushotham/Downloads"
-    delete: false
+    # move: "/Users/purushotham/Downloads"
+    delete: true
   enable: true
   priority: 1

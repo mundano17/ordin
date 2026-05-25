@@ -108,7 +108,9 @@ func (m displayPathAction) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 			}
 		case key.Matches(msg, m.keys.Space):
-			m.destPaths[m.cursor].selected = !m.destPaths[m.cursor].selected
+			if m.cursor >= 0 {
+				m.destPaths[m.cursor].selected = !m.destPaths[m.cursor].selected
+			}
 		case key.Matches(msg, m.keys.Delete):
 			m.toDelete = !m.toDelete
 		case key.Matches(msg, m.keys.Help):
@@ -121,11 +123,15 @@ func (m displayPathAction) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m displayPathAction) View() tea.View {
+	if len(m.destPaths) == 0 {
+		return tea.NewView("")
+	}
+
 	var s strings.Builder
 	//if m.toDelete {
 	//	fmt.Fprintf(&s, "%s", "DELETE ENABLED")
 	//}
-	fmt.Fprintf(&s, "%s\n", "")
+	_, _ = fmt.Fprintf(&s, "%s\n", "")
 	for i, row := range m.destPaths {
 		cursor := " "
 		if i == m.cursor {
@@ -135,7 +141,7 @@ func (m displayPathAction) View() tea.View {
 		if m.destPaths[i].selected {
 			checkbox = "[x]"
 		}
-		fmt.Fprintf(&s, "%s %s %s\n", cursor, checkbox, row.path)
+		_, _ = fmt.Fprintf(&s, "%s %s %s\n", cursor, checkbox, row.path)
 	}
 
 	return tea.NewView(s.String())
