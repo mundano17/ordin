@@ -94,7 +94,7 @@ Multiple rules can be defined in the same file. Rules are sorted by priority bef
 - Recovery from failed transactions not yet implemented — WAL log exists but rollback is not wired up
 - Symlinks not supported
 - Datasize is feature exists but isn't tested and isn't completely implemented, recommended to disable it. But if you are gonna use it anyways, I suggest testing it out with dryrun and it uses bytes.
-
+- WINDOWS SUPPORT IS BROKEN AS OF NOW
 ---
 
 ## Roadmap
