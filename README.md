@@ -2,8 +2,8 @@
 
 A rule-based file organizer with a TUI, built in Go. Define rules in a YAML file, run a dry run to preview, then execute. Moves, copies, and trashes files based on regex patterns with a WAL-backed operation log.
 
-> ⚠️ Work in progress. Recovery from failed transactions is not yet implemented. Use at your own risk.
-
+## Check Demo:
+![check demo](images/check.png)
 
 ## Run Demo:
 ![run demo](images/run.png)
@@ -13,6 +13,10 @@ Both dryrun and run has the same interface as above, dryrun just lets you see wh
 ## Log Demo:
 ![log demo](images/log.png)
 
+## Recovery Demo:
+![failed transaction](images/recovery.png)
+
+>NOTE: In the run command, the post run recovery failed due to me renaming the source path of the file mid TUI in another tab, in recover command i have undone my rename and hence it managed to recover.This was done purely for demo pruposes
 ---
 
 ## Features
@@ -92,13 +96,10 @@ Multiple rules can be defined in the same file. Rules are sorted by priority bef
 ## Known Issues
 
 - Symlinks not supported
-- Datasize is feature exists but isn't tested and isn't completely implemented, recommended to disable it. But if you are gonna use it anyways, I suggest testing it out with dryrun and it uses bytes.
 
 ## Roadmap
 
-- [ ] Folder watcher + automation mode
 - [ ] Bug fixes and broader testing
-- [ ] Fix datasize in yaml to allow users to write KB, MB, etc
 
 ---
 

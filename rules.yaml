@@ -2,12 +2,13 @@ module 6 files:
   name: '(?i)module.{0,2}6'
   extension: '.'
   dataSize:
-    max: 0
+    max: 10
     min: 0
     equal: 0
-    enable: false
+    enable: true
+    unit: "MB"
   action:
-    # move: "/Users/purushotham/Downloads"
-    delete: true
+    move: "/Users/purushotham/Downloads"
+    delete: false
   enable: true
   priority: 1
