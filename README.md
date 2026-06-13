@@ -17,7 +17,7 @@ Both dryrun and run has the same interface as above, dryrun just lets you see wh
 ![failed transaction](images/recovery.png)
 
 >NOTE: In the run command, the post run recovery failed due to me renaming the source path of the file mid TUI in another tab, in recover command i have undone my rename and hence it managed to recover.This was done purely for demo pruposes
----
+
 
 ## Features
 
@@ -27,7 +27,7 @@ Both dryrun and run has the same interface as above, dryrun just lets you see wh
 - WAL logging to `UserConfigDir/ordin/session/<timestamp>/log/log.ndjson`
 - Soft deletes — moved files go to a session trash folder before being removed
 
----
+
 
 ## Installation
 
@@ -37,7 +37,7 @@ cd ordin
 go build main.go
 ```
 
----
+
 
 ## Usage
 
@@ -56,7 +56,7 @@ go build main.go
 - Space again to select and Esc to go back and move around filenames
 - Ctrl + S to save and run (no-op in dryrun mode).
 
----
+
 
 ## Rules
 
@@ -82,7 +82,6 @@ group a:
 
 Multiple rules can be defined in the same file. Rules are sorted by priority before execution.
 
----
 
 ## How it works
 
@@ -92,7 +91,6 @@ Multiple rules can be defined in the same file. Rules are sorted by priority bef
 4. **Executor** — runs the plan concurrently with a worker pool. On fatal error, cancels remaining workers and exits
 5. **WAL** — every operation is logged before and after execution. Session logs and trash live in `UserConfigDir/ordin/session/<timestamp>/`
 
----
 
 ## Known Issues
 
@@ -101,8 +99,7 @@ Multiple rules can be defined in the same file. Rules are sorted by priority bef
 ## Roadmap
 
 - [ ] Bug fixes and broader testing
-
----
+- [ ] File Watcher + Automation
 
 ## Built with
 
